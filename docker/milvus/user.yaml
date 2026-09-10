@@ -1,0 +1,6 @@
+# Milvus 用户级配置覆盖，会合并进默认的 milvus.yaml。
+# 留空即使用全部默认值。示例（需要开启鉴权时取消注释）：
+#
+# common:
+#   security:
+#     authorizationEnabled: true
