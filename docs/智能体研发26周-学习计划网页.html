@@ -1,0 +1,1208 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>智能体研发 26 周</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --bg: #F2F3EF;
+    --surface: #FFFFFF;
+    --surface-2: #E8EAE4;
+    --ink: #1A1D21;
+    --ink-2: #4B535C;
+    --ink-3: #7B838C;
+    --line: #D3D7CF;
+    --line-strong: #B9BEB5;
+    --accent: #1F4FD8;
+    --accent-ink: #FFFFFF;
+    --accent-soft: #E3E9FB;
+    --done: #178A55;
+    --done-soft: #DDF3E7;
+    --active: #C7780C;
+    --active-soft: #FBEBD1;
+    --todo: #9AA1A9;
+    --todo-soft: #ECEEEA;
+    --shadow: 0 1px 2px rgba(20, 24, 28, .06), 0 6px 20px -12px rgba(20, 24, 28, .18);
+    --radius: 10px;
+    --font-body: "IBM Plex Sans", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+    --font-display: "Noto Serif SC", "Songti SC", "STSong", "SimSun", serif;
+    --font-mono: "IBM Plex Mono", "SF Mono", Menlo, Consolas, monospace;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #15181C;
+      --surface: #1D2126;
+      --surface-2: #262B31;
+      --ink: #E8EAE6;
+      --ink-2: #B4BAB6;
+      --ink-3: #858C91;
+      --line: #343A41;
+      --line-strong: #454C54;
+      --accent: #85A3FF;
+      --accent-ink: #0F1A3A;
+      --accent-soft: #24304F;
+      --done: #4FC48A;
+      --done-soft: #1B3A2B;
+      --active: #E9A23B;
+      --active-soft: #3D2E14;
+      --todo: #6C737A;
+      --todo-soft: #2A2F35;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px -12px rgba(0, 0, 0, .6);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #15181C;
+    --surface: #1D2126;
+    --surface-2: #262B31;
+    --ink: #E8EAE6;
+    --ink-2: #B4BAB6;
+    --ink-3: #858C91;
+    --line: #343A41;
+    --line-strong: #454C54;
+    --accent: #85A3FF;
+    --accent-ink: #0F1A3A;
+    --accent-soft: #24304F;
+    --done: #4FC48A;
+    --done-soft: #1B3A2B;
+    --active: #E9A23B;
+    --active-soft: #3D2E14;
+    --todo: #6C737A;
+    --todo-soft: #2A2F35;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px -12px rgba(0, 0, 0, .6);
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  button { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+  .page { max-width: 1240px; margin: 0 auto; padding: 28px 24px 80px; }
+  @media (max-width: 640px) { .page { padding: 18px 14px 60px; } }
+
+  /* ---------- header ---------- */
+  .top { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; flex-wrap: wrap; padding-bottom: 18px; border-bottom: 1px solid var(--line-strong); }
+  .eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 6px; }
+  h1 { font-family: var(--font-display); font-weight: 700; font-size: 30px; line-height: 1.2; margin: 0; letter-spacing: .01em; text-wrap: balance; }
+  .sub { margin: 6px 0 0; color: var(--ink-2); font-size: 14px; }
+  .sub b { font-weight: 500; color: var(--ink); }
+  .save { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 12px; color: var(--ink-2); background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px 6px 10px; }
+  .save .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--todo); }
+  .save[data-mode="cloud"] .dot { background: var(--done); }
+  .save[data-mode="local"] .dot { background: var(--active); }
+  .save[data-mode="saving"] .dot { background: var(--accent); animation: pulse 1s ease-in-out infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+
+  /* ---------- stats ---------- */
+  .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 20px; }
+  @media (max-width: 900px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .stat { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px 12px; min-width: 0; }
+  .stat .k { font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 6px; }
+  .stat .v { font-family: var(--font-mono); font-size: 26px; font-weight: 500; line-height: 1.1; margin: 0; font-variant-numeric: tabular-nums; display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+  .stat .v small { font-size: 13px; color: var(--ink-3); font-weight: 400; }
+  .stat .d { margin: 6px 0 0; font-size: 13px; color: var(--ink-2); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .bar { height: 6px; background: var(--surface-2); border-radius: 999px; overflow: hidden; margin-top: 10px; }
+  .bar i { display: block; height: 100%; background: var(--accent); border-radius: 999px; transition: width .35s ease; }
+  .bar.done i { background: var(--done); }
+  .pill { display: inline-flex; align-items: center; gap: 5px; font-family: var(--font-mono); font-size: 11.5px; line-height: 1; padding: 5px 8px; border-radius: 999px; background: var(--todo-soft); color: var(--ink-2); white-space: nowrap; }
+  .pill.done { background: var(--done-soft); color: var(--done); }
+  .pill.active { background: var(--active-soft); color: var(--active); }
+  .pill.accent { background: var(--accent-soft); color: var(--accent); }
+  .pill.ahead { background: var(--done-soft); color: var(--done); }
+  .pill.behind { background: var(--active-soft); color: var(--active); }
+
+  /* ---------- state graph ---------- */
+  .graph { margin-top: 22px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 18px 16px; box-shadow: var(--shadow); }
+  .graph-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+  .graph-head h2 { font-family: var(--font-display); font-size: 17px; font-weight: 600; margin: 0; }
+  .graph-head p { margin: 0; font-size: 13px; color: var(--ink-3); }
+  .nodes { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 0; position: relative; }
+  .node { position: relative; background: transparent; border: 0; padding: 8px 6px 10px; text-align: center; cursor: pointer; border-radius: 8px; display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; }
+  .node:hover { background: var(--surface-2); }
+  .node[aria-pressed="true"] { background: var(--accent-soft); }
+  .node + .node::before { content: ""; position: absolute; left: calc(-50% + 30px); right: calc(50% + 30px); top: 36px; height: 2px; background: var(--line-strong); }
+  .node[data-status="done"] + .node::before { background: var(--done); }
+  .ring { width: 56px; height: 56px; position: relative; display: grid; place-items: center; }
+  .ring svg { position: absolute; inset: 0; transform: rotate(-90deg); }
+  .ring .track { fill: none; stroke: var(--surface-2); stroke-width: 5; }
+  .ring .fill { fill: none; stroke: var(--accent); stroke-width: 5; stroke-linecap: round; transition: stroke-dashoffset .4s ease; }
+  .node[data-status="done"] .ring .fill { stroke: var(--done); }
+  .node[data-status="todo"] .ring .fill { stroke: var(--todo); }
+  .ring b { font-family: var(--font-mono); font-size: 13px; font-weight: 500; position: relative; }
+  .node .nm { font-size: 13px; font-weight: 500; line-height: 1.3; color: var(--ink); text-wrap: balance; }
+  .node .wk { font-family: var(--font-mono); font-size: 11px; color: var(--ink-3); }
+  .node .st { margin-top: 2px; }
+  .node .here { position: absolute; top: 2px; right: 6px; font-family: var(--font-mono); font-size: 10.5px; color: var(--accent); background: var(--accent-soft); border-radius: 4px; padding: 1px 5px; }
+  @media (max-width: 900px) {
+    .nodes { grid-template-columns: repeat(4, minmax(0, 1fr)); row-gap: 8px; }
+    .node + .node::before { display: none; }
+  }
+  @media (max-width: 520px) { .nodes { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+  .weeks { margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--line); }
+  .weeks-head { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 11.5px; color: var(--ink-3); margin-bottom: 8px; }
+  .strip { display: grid; grid-template-columns: repeat(27, minmax(0, 1fr)); gap: 3px; }
+  .cell { height: 22px; border-radius: 4px; background: var(--todo-soft); position: relative; font-family: var(--font-mono); font-size: 10px; color: var(--ink-3); display: grid; place-items: center; overflow: hidden; }
+  .cell[data-alt="1"] { background: var(--surface-2); }
+  .cell.past { background: var(--line); color: var(--ink-2); }
+  .cell.past[data-alt="1"] { background: var(--line-strong); }
+  .cell.now { background: var(--accent); color: var(--accent-ink); font-weight: 500; box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent); }
+  .cell.phase-done { background: var(--done-soft); color: var(--done); }
+  @media (max-width: 640px) { .cell { font-size: 0; height: 12px; } }
+
+  /* ---------- tabs ---------- */
+  .tabs { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 26px; border-bottom: 1px solid var(--line-strong); }
+  .tab { flex: 0 0 auto; background: transparent; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; padding: 10px 12px; cursor: pointer; color: var(--ink-2); font-size: 14px; display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
+  .tab .code { font-family: var(--font-mono); font-size: 12px; color: var(--ink-3); }
+  .tab:hover { color: var(--ink); }
+  .tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); font-weight: 500; }
+  .tab[aria-selected="true"] .code { color: var(--accent); }
+  .tab .mini { width: 8px; height: 8px; border-radius: 50%; background: var(--todo); }
+  .tab .mini.done { background: var(--done); }
+  .tab .mini.active { background: var(--active); }
+  .tab.util { margin-left: 10px; padding-left: 16px; border-left: 1px solid var(--line); border-radius: 0; }
+  @media (min-width: 1100px) { .tab.util { margin-left: auto; } }
+
+  /* ---------- phase panel ---------- */
+  .panel { margin-top: 22px; }
+  .phead { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 18px 28px; align-items: start; }
+  @media (max-width: 800px) { .phead { grid-template-columns: 1fr; } }
+  .phead h2 { font-family: var(--font-display); font-size: 26px; font-weight: 700; margin: 0; line-height: 1.25; text-wrap: balance; }
+  .phead h2 .code { font-family: var(--font-mono); font-size: 15px; font-weight: 500; color: var(--accent); margin-right: 10px; vertical-align: 3px; }
+  .phead .meta { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 10px; }
+  .phead .goal { margin: 12px 0 0; color: var(--ink-2); max-width: 68ch; }
+  .pside { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; min-width: 260px; }
+  .pside .row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 13px; color: var(--ink-2); }
+  .pside .row + .row { margin-top: 8px; }
+  .pside .row b { font-family: var(--font-mono); font-weight: 500; color: var(--ink); }
+  .pside input[type="date"] { font: inherit; font-family: var(--font-mono); font-size: 12.5px; color: var(--ink); background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; }
+  .jd-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+  .jd-tag { font-size: 12px; padding: 3px 8px; border-radius: 5px; background: var(--surface-2); color: var(--ink-2); border: 1px solid var(--line); }
+  .jd-tag.must { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+
+  .cols { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 6fr); gap: 20px; margin-top: 22px; align-items: start; }
+  @media (max-width: 960px) { .cols { grid-template-columns: 1fr; } }
+  .col { display: grid; gap: 20px; min-width: 0; }
+  .block { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px 14px; min-width: 0; }
+  .block h3 { font-size: 15px; font-weight: 600; margin: 0 0 4px; display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+  .block h3 .cnt { font-family: var(--font-mono); font-size: 12px; font-weight: 400; color: var(--ink-3); }
+  .block .lead { margin: 0 0 10px; font-size: 13px; color: var(--ink-3); }
+  .list { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+  .item { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 10px; align-items: start; padding: 8px 6px 8px 4px; border-radius: 6px; cursor: pointer; -webkit-tap-highlight-color: transparent; user-select: none; }
+  .item:hover { background: var(--surface-2); }
+  .item input { margin: 3px 0 0; width: 18px; height: 18px; accent-color: var(--done); cursor: pointer; flex: none; }
+  .item .t { font-size: 14px; line-height: 1.55; }
+  .item.checked .t { color: var(--ink-3); text-decoration: line-through; text-decoration-color: var(--line-strong); }
+  .item .hint { display: block; font-size: 12.5px; color: var(--ink-3); margin-top: 1px; }
+  .proj { border-left: 3px solid var(--accent); padding-left: 14px; margin-top: 6px; }
+  .proj .pn { font-family: var(--font-display); font-size: 17px; font-weight: 600; margin: 0; }
+  .proj .pn .code { font-family: var(--font-mono); font-size: 13px; color: var(--accent); margin-right: 8px; font-weight: 500; }
+  .proj p { margin: 6px 0 0; color: var(--ink-2); font-size: 14px; }
+  .proj ol { margin: 10px 0 0; padding-left: 20px; font-size: 14px; color: var(--ink); display: grid; gap: 4px; }
+  .proj ol li::marker { font-family: var(--font-mono); color: var(--ink-3); font-size: 12px; }
+
+  .res { list-style: none; margin: 0; padding: 0; display: grid; }
+  .res li { border-top: 1px solid var(--line); }
+  .res li:first-child { border-top: 0; }
+  .rrow { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 10px; align-items: start; padding: 9px 6px 9px 4px; border-radius: 6px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .rrow:hover { background: var(--surface-2); }
+  .rrow input { margin: 3px 0 0; width: 18px; height: 18px; accent-color: var(--done); cursor: pointer; }
+  .rrow a { cursor: pointer; }
+  .res .rt { display: flex; gap: 6px 8px; flex-wrap: wrap; align-items: baseline; }
+  .res .rt a { font-weight: 500; font-size: 14px; }
+  .res li.checked .rt a { color: var(--ink-3); }
+  .res .rn { font-size: 12.5px; color: var(--ink-3); margin-top: 1px; }
+  .chip { font-family: var(--font-mono); font-size: 10.5px; line-height: 1; padding: 3px 6px; border-radius: 4px; background: var(--surface-2); color: var(--ink-2); white-space: nowrap; letter-spacing: .02em; }
+  .chip.zh { background: var(--active-soft); color: var(--active); }
+  .chip.en { background: var(--accent-soft); color: var(--accent); }
+  .chip.len { background: transparent; border: 1px solid var(--line); color: var(--ink-3); }
+  .vid .ch { font-size: 12.5px; color: var(--ink-3); }
+  .empty { font-size: 13.5px; color: var(--ink-3); margin: 0; padding: 6px 4px; }
+
+  /* ---------- JD + rhythm views ---------- */
+  .doc h2 { font-family: var(--font-display); font-size: 24px; font-weight: 700; margin: 0 0 6px; }
+  .doc .intro { color: var(--ink-2); margin: 0 0 18px; max-width: 70ch; }
+  .tbl-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; min-width: 640px; }
+  th, td { text-align: left; padding: 11px 14px; border-top: 1px solid var(--line); vertical-align: top; }
+  thead th { border-top: 0; font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); font-weight: 500; background: var(--surface-2); }
+  td.nowrap { white-space: nowrap; }
+  .freq { font-family: var(--font-mono); font-size: 12px; white-space: nowrap; }
+  .freq.must { color: var(--accent); }
+  .freq.new { color: var(--active); }
+  .doc h3 { font-size: 16px; margin: 26px 0 8px; }
+  .doc p { max-width: 70ch; }
+  .principles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 800px) { .principles { grid-template-columns: 1fr; } }
+  .principle { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; }
+  .principle b { display: block; font-size: 15px; margin-bottom: 4px; }
+  .principle p { margin: 0; font-size: 13.5px; color: var(--ink-2); }
+  .anti { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+  .anti li { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; font-size: 14px; }
+  .anti li b { color: var(--active); font-weight: 600; }
+  pre { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; font-family: var(--font-mono); font-size: 13px; line-height: 1.6; overflow-x: auto; margin: 0; color: var(--ink); }
+
+  /* ---------- footer ---------- */
+  .foot { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; align-items: center; font-size: 13px; color: var(--ink-3); }
+  .foot label { display: inline-flex; align-items: center; gap: 8px; color: var(--ink-2); }
+  .foot input[type="date"] { font: inherit; font-family: var(--font-mono); font-size: 12.5px; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; }
+  .btn-ghost { background: transparent; border: 1px solid var(--line); border-radius: 6px; padding: 5px 10px; font-size: 12.5px; color: var(--ink-2); cursor: pointer; }
+  .btn-ghost:hover { border-color: var(--line-strong); color: var(--ink); }
+  .btn-ghost.warn { border-color: var(--active); color: var(--active); }
+
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="top">
+    <div>
+      <p class="eyebrow">langGraph-learn · 6 个月学习计划</p>
+      <h1>智能体研发 26 周</h1>
+      <p class="sub">Python · <b>LangGraph</b> 主线 · 对标大厂 JD · 每周 8–12 小时 · 六个里程碑项目</p>
+    </div>
+    <div class="save" id="save" data-mode="init"><span class="dot"></span><span id="saveText">Checkpoint · 载入中</span></div>
+  </header>
+
+  <section class="stats" id="stats" aria-label="进度概览"></section>
+
+  <section class="graph" aria-label="阶段状态图">
+    <div class="graph-head">
+      <h2>阶段状态图</h2>
+      <p>点一个节点查看该阶段；环形是该阶段清单的完成率，边线在前一阶段全部完成后变绿。</p>
+    </div>
+    <div class="nodes" id="nodes"></div>
+    <div class="weeks">
+      <div class="weeks-head"><span id="weeksLeft">W0 → W26</span><span id="weeksRight"></span></div>
+      <div class="strip" id="strip" aria-label="26 周进度条"></div>
+    </div>
+  </section>
+
+  <nav class="tabs" id="tabs" role="tablist" aria-label="阶段"></nav>
+  <main class="panel" id="panel"></main>
+
+  <footer class="foot">
+    <label>计划开始日期（第 1 周周一）<input type="date" id="startDate"></label>
+    <span id="footNote">勾选即保存；同一账号在其他设备打开会同步。</span>
+    <button class="btn-ghost" id="reset" type="button">重置全部进度</button>
+  </footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* =========================== 数据 =========================== */
+  // resources: [name, url, type, lang, note]; videos: [title, channel, url, lang, length, why]
+  const PLAN = {
+    start: '2026-09-14',
+    phases: [
+      {
+        id: 'm0', code: 'M0', name: '准备周', short: '准备周', w0: 0, w1: 0, hours: 6,
+        goal: '环境、仓库、模型 API、账号与规范就绪，从第一天起就按项目化方式工作。这一周不学新概念，只把后面 26 周要反复用的东西一次配好。',
+        jd: [],
+        topics: [
+          ['安装 Python 3.12 与 uv，建立 monorepo langgraph-learn', 'p1…p6 各一个子目录，根目录放 docs/（学习日志）与 evals/（评测集）'],
+          ['Docker 跑通 Milvus 与 Elasticsearch', '机器吃力可先用 Milvus Lite，M2 再上容器'],
+          ['申请模型 API：一个国内 + 一个海外', 'DeepSeek 或百炼通义千问做大量实验；Claude 或 OpenAI 配合 MCP / Skills 生态；设月度预算上限'],
+          ['注册 LangSmith（免费层）、GitHub、Hugging Face', ''],
+          ['建立学习日志与项目 README 模板', '日志模板见「节奏与原则」']
+        ],
+        project: null,
+        deliverables: [
+          ['仓库骨架推送到 GitHub，含 README 与目录规范', ''],
+          ['一条命令能调通两家模型 API 并打印 token 用量', 'uv run 入口'],
+          ['Milvus / Elasticsearch 容器可启动，健康检查通过', ''],
+          ['第一条学习日志（Week 0）', '']
+        ],
+        resources: [
+          ['Milvus Lite：本地轻量运行', 'https://milvus.io/docs/milvus_lite.md', 'docs', 'EN', '一行 pip 装好，先跑起来再谈容器'],
+          ['LangSmith 文档', 'https://docs.langchain.com/langsmith/home', 'docs', 'EN', '注册后把 API key 配进环境变量'],
+          ['LangGraph 源码仓库', 'https://github.com/langchain-ai/langgraph', 'tool', 'EN', '克隆一份，M3 读 pregel/ 用']
+        ],
+        videos: []
+      },
+      {
+        id: 'm1', code: 'M1', name: '模型交互与高级 Prompt', short: '模型交互与 Prompt', w0: 1, w1: 4, hours: 42,
+        goal: '不靠任何框架，把 LLM 应用最底层的四件事跑通：对话与流式、结构化输出、工具调用循环、Prompt 的版本化与评测。这一层理解得越透，后面用框架时越知道它在替你做什么。',
+        jd: ['Prompt 工程（高级）', 'Agent 开发（基础）'],
+        topics: [
+          ['Workflow vs Agent 的判断框架', '《Building Effective Agents》：能用确定性流程解决的不上 Agent'],
+          ['消息格式、system prompt、多轮对话与流式事件', ''],
+          ['结构化输出：JSON Schema / Pydantic 校验与失败重试', ''],
+          ['Tool-Use 协议：tool_use → tool_result 循环、并行工具调用、错误处理', '自己写 while 循环，不用框架'],
+          ['高级 Prompt：few-shot、chain-of-thought、prompt chaining、prompt caching', ''],
+          ['ReAct 论文：推理 + 行动循环的原始形态', ''],
+          ['token 计费与成本表；temperature / top_p 的实际影响', '']
+        ],
+        project: {
+          code: 'P1', name: '命令行研发助手',
+          desc: '一个 CLI 工具：读本地代码仓库、执行白名单 shell 命令、总结 git diff 并生成 commit message。工具调用循环全部手写。',
+          build: [
+            '用原生 SDK 实现多轮对话与 streaming',
+            '定义 3–5 个工具（读文件、列目录、跑白名单命令、git diff），手写 tool-calling 循环',
+            '所有工具输出经 Pydantic 校验，失败自动重试一次',
+            'promptfoo 建 ≥20 条用例，做 3 轮 Prompt 迭代并记录分数',
+            '每次调用记录 token 与费用，输出成本表'
+          ]
+        },
+        deliverables: [
+          ['P1 仓库 + README（架构说明与运行方式）', ''],
+          ['手写 tool loop 通过 10+ 条多步工具调用用例', ''],
+          ['结构化输出 100% 通过 schema 校验', ''],
+          ['promptfoo ≥20 条用例，含 3 轮迭代前后分数对比', '面试要能说出"从 X% 到 Y%"'],
+          ['成本表：每次调用的 token 与费用', ''],
+          ['一篇学习笔记：function calling 协议细节与 prompt caching', '']
+        ],
+        resources: [
+          ['Building Effective Agents（Anthropic）', 'https://www.anthropic.com/engineering/building-effective-agents', 'article', 'EN', '先读这篇，建立 Workflow vs Agent 的判断框架'],
+          ['Claude Prompt Engineering 总览', 'https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/overview', 'docs', 'EN', '官方提示工程文档，逐页过'],
+          ['OpenAI Prompt Engineering 指南', 'https://developers.openai.com/api/docs/guides/prompt-engineering', 'docs', 'EN', '另一家的口径，对照读差异'],
+          ['Claude Tool Use 文档', 'https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview', 'docs', 'EN', 'tool_use / tool_result 协议细节'],
+          ['OpenAI Function Calling 文档', 'https://developers.openai.com/api/docs/guides/function-calling', 'docs', 'EN', 'function calling 协议对照'],
+          ['Anthropic Academy：Building with the Claude API', 'https://anthropic.skilljar.com/claude-with-the-anthropic-api', 'course', 'EN', '免费注册，覆盖 API 全貌'],
+          ['ReAct 论文（arXiv 2210.03629）', 'https://arxiv.org/abs/2210.03629', 'paper', 'EN', '推理 + 行动循环的原始形态'],
+          ['promptfoo 文档', 'https://www.promptfoo.dev/docs/intro/', 'tool', 'EN', 'Prompt 用例与评测 CLI']
+        ],
+        videos: [
+          ['Deep Dive into LLMs like ChatGPT', 'Andrej Karpathy', 'https://www.youtube.com/watch?v=7xTGNNLPyMI', 'EN', '3h31m', '把 LLM 内部机制一次讲透，值得完整看'],
+          ['深入探索像 ChatGPT 这样的大语言模型（Karpathy 中文字幕）', 'KrillinAI俊希 · B站', 'https://www.bilibili.com/video/BV16cNEeXEer/', 'ZH', '3h31m', '上一条的中文字幕版'],
+          ['How We Build Effective Agents（Barry Zhang, Anthropic）', 'AI Engineer', 'https://www.youtube.com/watch?v=D7_ipDqhtwk', 'EN', '~20m', '《Building Effective Agents》作者本人讲原则'],
+          ['AI prompt engineering: A deep dive', 'Anthropic', 'https://www.youtube.com/watch?v=T9aRN5JkmL8', 'EN', '~1h', 'Anthropic 提示团队圆桌，官方的提示心法'],
+          ['吴恩达提示词工程教程（中文，附课件代码）', '吴恩达深度学习 · B站', 'https://www.bilibili.com/video/BV1173jzNELG/', 'ZH', '1h33m', '中文入门最顺的一套，配代码']
+        ]
+      },
+      {
+        id: 'm2', code: 'M2', name: 'RAG 与向量检索', short: 'RAG 与向量检索', w0: 5, w1: 8, hours: 42,
+        goal: '搭出一条可评测的生产级 RAG 管线，Milvus 与 Elasticsearch 都上手，并用指标说明每个优化点的收益。JD 里"几乎全部"都要它。',
+        jd: ['RAG / 向量检索（必备）', '评测（入门）', '框架（LlamaIndex）'],
+        topics: [
+          ['分块策略：固定窗口 / 递归 / 语义 / 按文档结构，以及对召回的影响', ''],
+          ['Embedding 选型：bge-m3、Qwen3-Embedding、text-embedding-3；中文评测口径 C-MTEB', ''],
+          ['Milvus 架构与索引（HNSW / IVF）；Milvus Lite 与 Docker 部署', ''],
+          ['Elasticsearch BM25 + kNN 混合检索、RRF 融合', ''],
+          ['Rerank（bge-reranker-v2-m3）的收益与代价', ''],
+          ['RAG 评测指标：faithfulness、answer relevancy、context precision / recall', 'Ragas'],
+          ['高级 RAG：query rewriting、HyDE、parent-document、GraphRAG 的适用场景', '只需理解何时该用'],
+          ['LlamaIndex 的 RAG 抽象：Document / Node / Index / Retriever / QueryEngine', '']
+        ],
+        project: {
+          code: 'P2', name: '企业知识库问答',
+          desc: '选一个有真实体量的文档集（某开源项目的完整文档，或你熟悉行业的公开规范），构建入库 → 检索 → 生成 → 引用溯源的完整管线，并用评测集证明每个优化点。',
+          build: [
+            '同一语料分别入 Milvus 与 Elasticsearch，对比纯向量 / 纯 BM25 / 混合三种召回',
+            '加 Rerank 前后对比；分块大小与 overlap 做消融实验',
+            'LlamaIndex 版与手写管线版各实现一遍，做对照',
+            '回答带引用溯源（返回命中片段与来源）',
+            'Ragas 评测集 ≥50 条（问题 + 标准答案 + 参考片段），输出评测报告'
+          ]
+        },
+        deliverables: [
+          ['P2 仓库 + README；Milvus 与 ES 双实现配置', ''],
+          ['召回对比表：向量 / BM25 / 混合 / +Rerank 的 context recall', ''],
+          ['Ragas 评测集 ≥50 条，faithfulness ≥0.85', ''],
+          ['分块消融实验记录', ''],
+          ['评测报告：每个优化点的收益', ''],
+          ['一篇笔记：为什么召回了却答错 / 分块怎么定 / 何时用 GraphRAG', '面试高频三问']
+        ],
+        resources: [
+          ['Milvus Quickstart', 'https://milvus.io/docs/quickstart.md', 'docs', 'EN', 'Milvus Lite + Python 十分钟上手'],
+          ['Elasticsearch 向量检索', 'https://www.elastic.co/docs/solutions/search/vector', 'docs', 'EN', 'dense / sparse 向量、kNN、semantic_text'],
+          ['Elasticsearch 混合检索', 'https://www.elastic.co/docs/solutions/search/hybrid-search', 'docs', 'EN', '全文 + 向量一次查询，RRF 融合'],
+          ['Ragas 文档', 'https://docs.ragas.io/en/stable/', 'docs', 'EN', 'RAG 评测指标与评测集构建'],
+          ['LlamaIndex Python 文档', 'https://developers.llamaindex.ai/python/framework/', 'docs', 'EN', 'RAG 侧最成体系的框架'],
+          ['DeepLearning.AI：Building and Evaluating Advanced RAG', 'https://www.deeplearning.ai/short-courses/building-evaluating-advanced-rag/', 'course', 'EN', '短课，sentence-window / auto-merging 检索'],
+          ['bge-m3 模型卡', 'https://huggingface.co/BAAI/bge-m3', 'tool', 'EN', '多语言 dense / sparse / colbert，8192 tokens'],
+          ['Qwen3-Embedding-8B 模型卡', 'https://huggingface.co/Qwen/Qwen3-Embedding-8B', 'tool', 'EN', '中文场景强，MTEB 多语言榜前列'],
+          ['RAGAS 论文（arXiv 2309.15217）', 'https://arxiv.org/abs/2309.15217', 'paper', 'EN', '指标定义的原始出处'],
+          ['Lost in the Middle（arXiv 2307.03172）', 'https://arxiv.org/abs/2307.03172', 'paper', 'EN', '长上下文中间位置信息被忽略，影响拼接顺序']
+        ],
+        videos: [
+          ['RAG 工作机制详解：一个高质量知识库背后的技术全流程', '马克的技术工作坊 · B站', 'https://www.bilibili.com/video/BV1JLN2z4EZQ/', 'ZH', '17m', '17 分钟把 RAG 全流程原理讲清'],
+          ['Get Started with Milvus building a RAG App', 'Zilliz', 'https://www.youtube.com/watch?v=TcWnbaiczGo', 'EN', '~30m', 'Milvus 官方 RAG 快速上手'],
+          ['Building and Evaluating Advanced RAG（中英字幕）', 'DeepLearning.AI 课程转载', 'https://www.youtube.com/playlist?list=PLbd7ntv6PxC3r-z9JHaPAf_yfa017QtpA', 'EN', '播放列表', '高级 RAG 课程视频，带中英字幕'],
+          ['大模型 RAG 与 Agent 智能体项目实战（LangChain）', '黑马程序员 · B站', 'https://www.bilibili.com/video/BV1yjz5BLEoY/', 'ZH', '15h31m / 67P', '系统课，挑 RAG 章节看即可']
+        ]
+      },
+      {
+        id: 'm3', code: 'M3', name: 'LangGraph 与单 Agent 工程化', short: 'LangGraph 单 Agent', w0: 9, w1: 12, hours: 42,
+        goal: '把 LangGraph 学到源码级，做出一个带持久化、人工审批、长期记忆和完整 trace 的生产形态 Agent。状态机是你的老本行，这个月应该是最顺的一个月。',
+        jd: ['Agent 开发（Tool-Use、Memory 管理）', '框架（LangGraph、LangChain）'],
+        topics: [
+          ['StateGraph、Node、Edge、Reducer、Command、Send、Subgraph', ''],
+          ['Checkpointer 与 durable execution；时间旅行（回退到某个 checkpoint 重跑）', ''],
+          ['interrupt 实现 Human-in-the-loop', '写操作前必须人工确认'],
+          ['Store 实现长期记忆；短期记忆与长期记忆的边界', ''],
+          ['Streaming 模式：updates / values / messages / custom', ''],
+          ['LangGraph 1.x 工程特性：per-node 超时与错误处理、优雅停机、Delta Channel、v3 事件流', ''],
+          ['LangChain 1.x create_agent 与 middleware；Deep Agents（LangChain 的 agent harness）', ''],
+          ['读 Pregel 执行引擎源码：superstep 与 channel 模型', 'langgraph/pregel/ 目录'],
+          ['LangSmith tracing：节点级 token 与延迟', '']
+        ],
+        project: {
+          code: 'P3', name: '研发知识助手（P1 + P2 的 LangGraph 版）',
+          desc: '一个既能查知识库（P2）也能操作代码仓库（P1）的 Agent：持久化会话、写操作需人工确认、记住用户偏好、子图复用、全链路可观测。',
+          build: [
+            '把 P1 的手写循环改写成 LangGraph 图，对比两种实现的可维护性',
+            '接入 SQLite / PostgreSQL Checkpointer，实现会话恢复与时间旅行',
+            '写操作前加 interrupt 做人工审批；用 Store 记住用户偏好',
+            '把 P2 的检索封装成子图复用',
+            '全链路接入 LangSmith tracing，观察每个节点的 token 与延迟'
+          ]
+        },
+        deliverables: [
+          ['P3 仓库 + README + 图结构示意', ''],
+          ['图含 ≥1 个子图、≥1 条条件边、≥1 个 interrupt', ''],
+          ['进程重启后会话可恢复；能演示回退到某个 checkpoint 重新执行', ''],
+          ['LangSmith 上 trace 完整；给出平均 token 与 P95 延迟', ''],
+          ['完成 LangChain Academy《Introduction to LangGraph》', ''],
+          ['一篇笔记：LangGraph 的 superstep / channel 执行模型', '']
+        ],
+        resources: [
+          ['LangGraph 概览', 'https://docs.langchain.com/oss/python/langgraph/overview', 'docs', 'EN', '官方文档首页，从这里进'],
+          ['LangGraph 持久化（Checkpointer / Store）', 'https://docs.langchain.com/oss/python/langgraph/persistence', 'docs', 'EN', '会话恢复、时间旅行、记忆'],
+          ['LangGraph Interrupts（Human-in-the-loop）', 'https://docs.langchain.com/oss/python/langgraph/interrupts', 'docs', 'EN', '暂停图、等待外部输入'],
+          ['LangGraph Memory', 'https://docs.langchain.com/oss/python/langgraph/memory', 'docs', 'EN', '短期 vs 长期记忆，Store 概念'],
+          ['LangGraph Streaming', 'https://docs.langchain.com/oss/python/langgraph/streaming', 'docs', 'EN', 'stream_mode 各模式'],
+          ['LangChain Academy：Introduction to LangGraph', 'https://academy.langchain.com/courses/intro-to-langgraph', 'course', 'EN', '免费，本月主课'],
+          ['LangChain Academy：Introduction to Deep Agents', 'https://academy.langchain.com/courses/foundation-introduction-to-deepagents', 'course', 'EN', '长时任务 agent harness'],
+          ['LangChain Academy：LangSmith Essentials', 'https://academy.langchain.com/courses/quickstart-langsmith-essentials', 'course', 'EN', 'tracing 与可观测快速上手'],
+          ['LangSmith 文档', 'https://docs.langchain.com/langsmith/home', 'docs', 'EN', ''],
+          ['LangGraph 源码仓库', 'https://github.com/langchain-ai/langgraph', 'tool', 'EN', '读 libs/langgraph/langgraph/pregel/']
+        ],
+        videos: [
+          ['LangChain Academy 课程视频合集', 'LangChain', 'https://www.youtube.com/playlist?list=PLfaIDFEXuae1opD3AuXZiwCfQTi8s2pBw', 'EN', '22 集', '官方课程视频：Intro to LangGraph、Essentials、Deep Agents'],
+          ['Introduction to Deep Agents（课程导览）', 'LangChain', 'https://www.youtube.com/watch?v=z30BJFWe89c', 'EN', '~10m', '规划、子 Agent、文件系统三件套'],
+          ['尚硅谷 LangGraph 教程：入门到智能体项目实战', '尚硅谷 · B站', 'https://www.bilibili.com/video/BV1z3NY66EY1/', 'ZH', '21h16m / 132P', '最系统的中文 LangGraph 课，按需跳章'],
+          ['2026 最新版 LangChain + LangGraph 开发实战（含 LangSmith）', '黑马程序员 · B站', 'https://www.bilibili.com/video/BV178w1z7EHQ/', 'ZH', '7h18m / 28P', 'LangGraph + LangSmith 监控调试评估一体']
+        ]
+      },
+      {
+        id: 'm4', code: 'M4', name: '多 Agent 编排 + MCP / Skills 生态', short: '多 Agent + MCP', w0: 13, w1: 17, hours: 50,
+        goal: '做出 JD 原文描述的那种系统：通过 MCP 打通 CRM / ERP / OA，由多 Agent 协作完成跨系统任务。这是 2026 年 JD 相对 2025 年最明显的新增项，所以给了 5 周。',
+        jd: ['Agent 开发与多智能体编排（必备）', 'MCP / Skills / Connector 生态（新兴 · 高频）'],
+        topics: [
+          ['多 Agent 模式：Supervisor、层级式、Swarm / Handoff、Send 并行 map-reduce', ''],
+          ['何时不该拆多 Agent：上下文碎片化、成本翻倍', '面试系统设计题常见陷阱'],
+          ['Anthropic 多 Agent 研究系统的编排-执行设计', ''],
+          ['MCP 2026-07-28 规范：无状态核心、多轮往返请求（MRTR）、Header 路由、可缓存列表、授权加固（CIMD）、Tasks 扩展', '对比 2025-11 版理解演进方向'],
+          ['MCP Python SDK：tools / resources / prompts；stdio 与 Streamable HTTP；OAuth', ''],
+          ['Agent Skills 标准：SKILL.md frontmatter、scripts/ references/ assets/、渐进式加载', ''],
+          ['A2A 协议概览：与 MCP 的分工', '只需能讲清']
+        ],
+        project: {
+          code: 'P4', name: '企业办公多 Agent 系统',
+          desc: '一个 Supervisor Agent 编排销售查询、报销审批、日程协调三个子 Agent，全部通过自建 MCP 服务器访问模拟的 CRM / ERP / OA；报销审批含人工确认；配套两个可复用的 Skill。',
+          build: [
+            '用 FastAPI + SQLite 各写一个 mock 的 CRM / ERP / OA 服务',
+            '每个服务配一个 MCP 服务器（tools + resources），至少一个工具用 MRTR 向用户要缺失参数',
+            'MCP 客户端接入 LangGraph；同时在 Claude Code 等客户端里验证互操作',
+            'Supervisor 编排三个子 Agent；再做一版 Swarm / Handoff 对照',
+            '写 2 个 Agent Skills（周报生成、合同要点提取），在支持 Skills 的客户端跑通'
+          ]
+        },
+        deliverables: [
+          ['≥3 个 MCP 服务器，MCP Inspector 检查通过', ''],
+          ['一个跨系统任务端到端跑通', '如"给上季度前三大客户安排回访并预提差旅报销"'],
+          ['Supervisor vs Swarm 对比表：成功率 / token / 延迟', ''],
+          ['≥2 个 Skill，在两个不同客户端可加载', ''],
+          ['完成 Anthropic Academy 的 MCP 两门课', ''],
+          ['一篇笔记：MCP 无状态化解决了什么问题', '']
+        ],
+        resources: [
+          ['LangChain 多 Agent 总览', 'https://docs.langchain.com/oss/python/langchain/multi-agent', 'docs', 'EN', 'subagents / handoffs / router 等模式'],
+          ['LangGraph Supervisor 教程', 'https://docs.langchain.com/oss/python/agent-supervisor', 'docs', 'EN', '从零搭一个 Supervisor'],
+          ['Subagents 模式', 'https://docs.langchain.com/oss/python/langchain/multi-agent/subagents', 'docs', 'EN', 'Supervisor-as-tools 协调'],
+          ['Handoffs 模式（Swarm 风格）', 'https://docs.langchain.com/oss/python/langchain/multi-agent/handoffs', 'docs', 'EN', 'Agent 之间通过状态交接'],
+          ['langgraph-supervisor', 'https://github.com/langchain-ai/langgraph-supervisor-py', 'tool', 'EN', '层级式多 Agent 库'],
+          ['langgraph-swarm', 'https://github.com/langchain-ai/langgraph-swarm-py', 'tool', 'EN', 'Swarm 风格多 Agent 库'],
+          ['How we built our multi-agent research system（Anthropic）', 'https://www.anthropic.com/engineering/multi-agent-research-system', 'article', 'EN', '编排-执行架构的最佳案例'],
+          ['MCP 规范 2026-07-28', 'https://modelcontextprotocol.io/specification/2026-07-28', 'docs', 'EN', '当前正式版，当论文读'],
+          ['MCP 官网', 'https://modelcontextprotocol.io/', 'docs', 'EN', '概念、教程、SDK 列表'],
+          ['MCP Python SDK', 'https://github.com/modelcontextprotocol/python-sdk', 'tool', 'EN', '官方客户端 / 服务器实现'],
+          ['MCP Inspector', 'https://github.com/modelcontextprotocol/inspector', 'tool', 'EN', '调试你的 MCP 服务器'],
+          ['Anthropic Academy：Introduction to MCP', 'https://anthropic.skilljar.com/introduction-to-model-context-protocol', 'course', 'EN', '用 Python 写服务器与客户端'],
+          ['Anthropic Academy：MCP Advanced Topics', 'https://anthropic.skilljar.com/model-context-protocol-advanced-topics', 'course', 'EN', 'sampling、通知、生产模式'],
+          ['Agent Skills 规范', 'https://agentskills.io/specification', 'docs', 'EN', 'frontmatter 字段、目录布局、校验'],
+          ['Anthropic Academy：Introduction to agent skills', 'https://anthropic.skilljar.com/introduction-to-agent-skills', 'course', 'EN', '构建、配置、分享 Skills'],
+          ['anthropics/skills 示例仓库', 'https://github.com/anthropics/skills', 'tool', 'EN', '官方示例 Skills，照着写'],
+          ['A2A 协议', 'https://a2a-protocol.org/latest/', 'docs', 'EN', 'Agent 之间通信的开放标准，概览即可']
+        ],
+        videos: [
+          ['Building Agents with MCP：Full Workshop（Mahesh Murag, Anthropic）', 'AI Engineer', 'https://www.youtube.com/watch?v=kQmXtrmQ5Zg', 'EN', '1h44m', 'MCP 负责人亲讲，最权威的一场'],
+          ['MCP 终极指南：从原理到实战（基础篇）', '马克的技术工作坊 · B站', 'https://www.bilibili.com/video/BV1uronYREWR/', 'ZH', '27m', '中文原理到实战，先看这个再看上一条'],
+          ['Multi-agent swarms with LangGraph', 'LangChain', 'https://www.youtube.com/watch?v=JeyDrn1dSUQ', 'EN', '~15m', '官方 handoff 模式演示'],
+          ['Claude Agent Skills Explained', 'Anthropic', 'https://www.youtube.com/watch?v=fOxC44g8vig', 'EN', '~5m', 'Skills 概念官方短片'],
+          ['Agent Skills 详细攻略，一期视频精通', '技术爬爬虾 · B站', 'https://www.bilibili.com/video/BV1HuiyBQE9G/', 'ZH', '15m', 'Skills 用法与编写攻略']
+        ]
+      },
+      {
+        id: 'm5', code: 'M5', name: '评测体系 + 上下文工程 / Harness / SDD', short: '评测 + 上下文工程', w0: 18, w1: 22, hours: 50,
+        goal: '把前四个项目从"能跑"升级为"可证明"，同时补齐 JD 里两个新兴项。这个月的产出是面试时最能拉开档位的部分。',
+        jd: ['评测（新兴 · 中频）', '上下文工程 / Harness 工程 / SDD（新兴 · 中频）', 'Prompt 工程（高级）'],
+        topics: [
+          ['评测金字塔：Prompt 单元测试 → 组件评测 → 端到端评测 → 在线评测 / A/B', ''],
+          ['LLM-as-Judge：rubric 设计、pairwise、位置与冗长偏差、与人工标注的一致性校准', ''],
+          ['Auto-rater 与评测集构建：从 trace 采样、合成数据、黄金集版本管理', ''],
+          ['回归用例移交：把评测集当测试资产交付 QA / 下游', 'JD 原词'],
+          ['工具取舍：LangSmith Evaluate / Ragas / DeepEval / promptfoo', '各用一次'],
+          ['上下文工程：compaction、子 Agent 隔离、just-in-time 检索、记忆文件；工具描述怎么写', ''],
+          ['Harness 工程：agent loop、规划与任务拆解、上下文投递与压缩、验证与 CI、权限、可观测、HITL', ''],
+          ['SDD：Spec Kit / Kiro 的 spec → plan → tasks 工作流', '']
+        ],
+        project: {
+          code: 'P5', name: 'Agent 评测与回归平台',
+          desc: '统一的评测集管理、Judge 评分、CI 回归与报告生成工具，覆盖 P2 / P3 / P4；附一份"回归用例移交文档"，模拟交付给 QA 团队。P5 本身用 SDD 方式交付。',
+          build: [
+            '为 P2 / P3 / P4 建统一评测集（合计 ≥150 条），规则评分 + LLM-as-Judge',
+            '30 条样本人工标注，计算 Judge 一致性并迭代 rubric 到 ≥0.8',
+            'GitHub Actions 每次 PR 自动跑回归并输出对比',
+            '对 P4 做上下文工程优化（压缩历史、子 Agent 隔离、按需加载工具描述），量化 token 与成功率',
+            '先写 spec，再 plan，再 tasks，最后才写代码'
+          ]
+        },
+        deliverables: [
+          ['评测集 ≥150 条，含版本管理', ''],
+          ['Judge 与人工一致性 ≥0.8 的校准报告', ''],
+          ['CI 回归流水线，每次 PR 自动出对比', ''],
+          ['上下文优化报告：token 下降 ≥30% 且成功率不降', ''],
+          ['P5 的 spec / plan / tasks 三份文档', ''],
+          ['回归用例移交文档（模拟交付 QA）', ''],
+          ['一篇笔记：LLM-as-Judge 校准实践', '']
+        ],
+        resources: [
+          ['LangSmith Evaluation 文档', 'https://docs.langchain.com/langsmith/evaluation', 'docs', 'EN', '数据集、评估器、回归'],
+          ['DeepEval 快速开始', 'https://deepeval.com/docs/getting-started', 'tool', 'EN', 'pytest 风格的 LLM 评测'],
+          ['promptfoo Getting Started', 'https://www.promptfoo.dev/docs/getting-started/', 'tool', 'EN', '配置、provider、用例'],
+          ['DeepLearning.AI：Evaluating AI Agents', 'https://www.deeplearning.ai/short-courses/evaluating-ai-agents/', 'course', 'EN', 'Agent 评测方法短课'],
+          ['Your AI Product Needs Evals（Hamel Husain）', 'https://hamel.dev/blog/posts/evals/', 'article', 'EN', '评测体系怎么从零建起来'],
+          ['Judging LLM-as-a-Judge（arXiv 2306.05685）', 'https://arxiv.org/abs/2306.05685', 'paper', 'EN', 'MT-Bench，LLM 当裁判的方法论'],
+          ['Effective context engineering for AI agents（Anthropic）', 'https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents', 'article', 'EN', '上下文工程的定义与实践'],
+          ['Writing effective tools for agents（Anthropic）', 'https://www.anthropic.com/engineering/writing-tools-for-agents', 'article', 'EN', '工具描述怎么写才好用'],
+          ['Harness engineering（OpenAI）', 'https://openai.com/index/harness-engineering/', 'article', 'EN', 'Harness 工程一词的出处'],
+          ['Effective harnesses for long-running agents（Anthropic）', 'https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents', 'article', 'EN', '跨会话上下文与 initializer 模式'],
+          ['Harness design for long-running application development（Anthropic）', 'https://www.anthropic.com/engineering/harness-design-long-running-apps', 'article', 'EN', '2026 年的后续实践'],
+          ['awesome-harness-engineering', 'https://github.com/ai-boost/awesome-harness-engineering', 'tool', 'EN', '十一个设计原语的资源清单'],
+          ['12-Factor Agents', 'https://github.com/humanlayer/12-factor-agents', 'article', 'EN', '生产级 LLM 软件的十二条原则'],
+          ['GitHub Spec Kit', 'https://github.com/github/spec-kit', 'tool', 'EN', 'SDD 工具包'],
+          ['Kiro 文档', 'https://kiro.dev/docs/', 'docs', 'EN', 'AWS 的 spec-driven IDE']
+        ],
+        videos: [
+          ['Context Engineering for Agents（Lance Martin）', 'LangChain', 'https://www.youtube.com/watch?v=4GiqzUHD5AA', 'EN', '~25m', 'write / select / compress / isolate 框架'],
+          ['Context Engineering：概念与技术实现深度解析', '马克的技术工作坊 · B站', 'https://www.bilibili.com/video/BV11zbPzVEUe/', 'ZH', '15m', '上下文工程中文精讲'],
+          ['AI Evaluations Clearly Explained in 50 Minutes（Hamel Husain）', 'Peter Yang', 'https://www.youtube.com/watch?v=uiza7wp1KrE', 'EN', '50m', '从错误分析起步的评测方法，带真实案例'],
+          ['LangSmith 助力 RAG 和 Agent 评估（上）', '沧海九粟 · B站', 'https://www.bilibili.com/video/BV1WdNheeEGG/', 'ZH', '22m', 'LangSmith 评估的中文实操'],
+          ['Harness Engineering（Ryan Lopopolo, OpenAI）', 'AI Engineer', 'https://www.youtube.com/watch?v=am_oeAoUhew', 'EN', '~20m', 'OpenAI 工程师讲 harness 实践'],
+          ['Introducing Spec Kit for Spec-Driven Development', 'Visual Studio Code', 'https://www.youtube.com/watch?v=DTw9X7MtU5s', 'EN', '~1h', 'Spec Kit 作者演示 SDD 工作流']
+        ]
+      },
+      {
+        id: 'm6', code: 'M6', name: '毕业项目、框架对照与求职', short: '毕业项目与求职', w0: 23, w1: 26, hours: 40,
+        goal: '把所有能力收束成一个可展示的端到端系统，补齐框架广度，完成求职材料。这个月的验收对象是简历和面试官。',
+        jd: ['全部七项综合验收'],
+        topics: [
+          ['部署与运维：LangSmith Deployment 或自建 FastAPI + 队列；成本上限、限流、降级', ''],
+          ['安全：prompt injection、工具权限最小化、敏感数据脱敏、OWASP LLM Top 10', '大厂 JD 不写但面试必问'],
+          ['框架对照：Dify、CrewAI、AutoGPT 各做一次同任务实验', '复用 P4 的一个子任务'],
+          ['系统设计题型：客服多 Agent 系统、企业 MCP 网关', ''],
+          ['简历项目描述的 STAR + 数字写法', '']
+        ],
+        project: {
+          code: 'P6', name: '垂直场景端到端 Agent 平台',
+          desc: '选一个与目标公司业务相近的场景（研发团队的需求分析 + 代码审查 + 知识问答，或客服 / 运营），综合 RAG、多 Agent、MCP、评测与部署，交付完整的工程化产物。',
+          build: [
+            '架构设计先行：写 spec，画架构图',
+            '综合 RAG + 多 Agent + MCP + 评测（复用 P2–P5 的组件）',
+            'Docker 一键部署；接入成本上限、限流与降级',
+            '评测报告、成本报告、部署说明',
+            '同步产出简历描述、面试题库、技术笔记'
+          ]
+        },
+        deliverables: [
+          ['P6 可一键部署，README + 架构图 + 评测报告 + 成本报告', ''],
+          ['六框架对照笔记（LangChain / LangGraph / LlamaIndex / Dify / AutoGPT / CrewAI）', ''],
+          ['简历：6 个项目每个一句带数字的描述', ''],
+          ['面试题库 8 主题 × 10 题', 'Prompt、RAG、LangGraph、多 Agent、MCP / Skills、评测、上下文工程、系统设计'],
+          ['2 道系统设计演练', ''],
+          ['3 篇公开技术笔记发布', ''],
+          ['2 次模拟面试', '可以由 Claude 扮演面试官']
+        ],
+        resources: [
+          ['LangSmith Deployment 文档', 'https://docs.langchain.com/langsmith/deployment', 'docs', 'EN', 'Cloud / hybrid / self-hosted'],
+          ['OWASP Top 10 for LLM Applications', 'https://genai.owasp.org/llm-top-10/', 'docs', 'EN', '安全题必备'],
+          ['A practical guide to building agents（OpenAI, PDF）', 'https://cdn.openai.com/business-guides-and-resources/a-practical-guide-to-building-agents.pdf', 'article', 'EN', '面向落地的简明指南'],
+          ['Dify 文档', 'https://docs.dify.ai/', 'docs', 'EN', '低代码平台，对照实验用'],
+          ['CrewAI 文档', 'https://docs.crewai.com/', 'docs', 'EN', '角色式多 Agent 框架'],
+          ['AutoGPT 仓库', 'https://github.com/Significant-Gravitas/AutoGPT', 'tool', 'EN', '对照实验用'],
+          ['Hugging Face Agents Course', 'https://huggingface.co/learn/agents-course/unit0/introduction', 'course', 'EN', '免费带证书，框架无关的补充'],
+          ['Berkeley Agentic AI MOOC（Fall 2025）', 'https://agenticai-learning.org/f25', 'course', 'EN', '学术视角的 Agent 课程，选看']
+        ],
+        videos: [
+          ['12-Factor Agents（Dex Horthy, HumanLayer）', 'AI Engineer', 'https://www.youtube.com/watch?v=8kMaTybvDUw', 'EN', '~20m', '生产级 Agent 设计原则，被引用最多的一场'],
+          ['LangSmith Deployment GA：部署 Agent 最简路径', 'LangChain', 'https://www.youtube.com/watch?v=YWVuBLSbNWE', 'EN', '~10m', '官方部署概览'],
+          ['Building Deep Agents and Deploying in Production', 'LangChain', 'https://www.youtube.com/watch?v=IZabCqyBJLg', 'EN', '~40m', '从构建到上线的官方完整演示'],
+          ['大模型落地企业应用实战项目经验分享', '但问智能 · B站', 'https://www.bilibili.com/video/BV11p4y1R7Dy/', 'ZH', '58m', '企业落地的系统设计与踩坑']
+        ]
+      }
+    ],
+    jd: [
+      ['RAG / 向量检索', '必备', 'must', '几乎全部 JD。配 Milvus / Elasticsearch 等向量数据库。', 'M2', true],
+      ['Agent 开发与多智能体编排', '必备', 'must', '字节要求"设计并实施复杂的多 Agent 协作方案"；阿里云要求"多 Agent 编排、Tool-Use、Memory 管理"。', 'M3–M4', true],
+      ['MCP / Skills / Connector 生态', '新兴 · 高频', 'new', '腾讯要求通过 MCP 打通客户 CRM / ERP / OA；MiniMax 与中软国际的交付物直接写明"MCP 服务器、子 Agent、Agent Skills"。这是 2026 年 JD 相对 2025 年最明显的新增。', 'M4', true],
+      ['Prompt 工程（高级）', '必备', 'must', '各家都写"高级"而非"会用"。', 'M1 → M5', false],
+      ['上下文工程 / Harness 工程 / SDD', '新兴 · 中频', 'new', '腾讯云服务 JD 的特征词汇，反映 AI Coding 与 Agent Runtime 的最新实践。', 'M5', false],
+      ['框架', '—', '', 'LangChain、LangGraph、LlamaIndex、Dify、AutoGPT、CrewAI。', 'M3 主线 · M6 对照', false],
+      ['评测', '新兴 · 中频', 'new', 'LLM-as-Judge、Auto-rater、评测集构建、回归用例移交。', 'M2 入门 · M5 体系化', false]
+    ]
+  };
+
+  const TYPE_ZH = { docs: '文档', course: '课程', article: '文章', paper: '论文', tool: '工具' };
+  const LS_KEY = 'agent26-progress-v1';
+  const LS_TAB = 'agent26-tab';
+
+  /* =========================== 状态 =========================== */
+  let state = { done: {}, startDate: PLAN.start, reviewed: {}, updatedAt: '' };
+  let dbDoc = null;
+  let saveMode = 'init';
+  let activeTab = 'auto';
+  // 本地版本号：每次用户改动 +1；savedVersion 是云端已确认写入的版本。
+  // 两者不相等时，云端推来的快照一律忽略，避免旧快照把刚勾的项冲掉。
+  let localVersion = 0;
+  let savedVersion = 0;
+  let writing = false;
+  let writeTimer = null;
+  let writeFailures = 0;
+  let seeded = false;
+
+  function ids(p) {
+    const out = [];
+    p.topics.forEach((_, i) => out.push(p.id + '.t' + i));
+    p.deliverables.forEach((_, i) => out.push(p.id + '.d' + i));
+    p.resources.forEach((_, i) => out.push(p.id + '.r' + i));
+    p.videos.forEach((_, i) => out.push(p.id + '.v' + i));
+    return out;
+  }
+  function progress(p) {
+    const all = ids(p);
+    const done = all.filter(id => state.done[id]).length;
+    return { done, total: all.length, pct: all.length ? done / all.length : 0 };
+  }
+  function delivProgress(p) {
+    const all = p.deliverables.map((_, i) => p.id + '.d' + i);
+    const done = all.filter(id => state.done[id]).length;
+    return { done, total: all.length };
+  }
+  function statusOf(p) {
+    const pr = progress(p);
+    if (pr.total && pr.done === pr.total) return 'done';
+    if (pr.done > 0) return 'active';
+    return 'todo';
+  }
+  function currentPhase() {
+    return PLAN.phases.find(p => statusOf(p) !== 'done') || PLAN.phases[PLAN.phases.length - 1];
+  }
+  function parseDate(s) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || '');
+    if (!m) return null;
+    return new Date(+m[1], +m[2] - 1, +m[3]);
+  }
+  function weekInfo() {
+    const start = parseDate(state.startDate);
+    if (!start) return { week: null };
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const diff = Math.floor((today - start) / 86400000);
+    let week;
+    if (diff < -7) week = -1;
+    else if (diff < 0) week = 0;
+    else week = Math.floor(diff / 7) + 1;
+    return { week, diff, start };
+  }
+  function phaseForWeek(w) {
+    if (w == null || w < 0) return null;
+    if (w > 26) return PLAN.phases[PLAN.phases.length - 1];
+    return PLAN.phases.find(p => w >= p.w0 && w <= p.w1) || null;
+  }
+  function fmtDate(d) {
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  function weekRange(w) {
+    const start = parseDate(state.startDate);
+    if (!start || w == null || w < 0) return '';
+    const a = new Date(start); a.setDate(a.getDate() + (w - 1) * 7);
+    const b = new Date(a); b.setDate(b.getDate() + 6);
+    return fmtDate(a).slice(5) + ' – ' + fmtDate(b).slice(5);
+  }
+  function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+
+  /* =========================== 持久化 =========================== */
+  function normalize(d) {
+    const n = { done: {}, startDate: PLAN.start, reviewed: {}, updatedAt: '' };
+    if (d && typeof d === 'object') {
+      if (d.done && typeof d.done === 'object') Object.keys(d.done).forEach(k => { if (d.done[k]) n.done[k] = true; });
+      if (typeof d.startDate === 'string' && parseDate(d.startDate)) n.startDate = d.startDate;
+      if (d.reviewed && typeof d.reviewed === 'object') Object.keys(d.reviewed).forEach(k => { if (typeof d.reviewed[k] === 'string') n.reviewed[k] = d.reviewed[k]; });
+      if (typeof d.updatedAt === 'string') n.updatedAt = d.updatedAt;
+    }
+    return n;
+  }
+  function serialize() {
+    return { done: Object.assign({}, state.done), startDate: state.startDate, reviewed: Object.assign({}, state.reviewed), updatedAt: state.updatedAt || '' };
+  }
+  function sameContent(a, b) {
+    return JSON.stringify({ d: a.done, s: a.startDate, r: a.reviewed }) === JSON.stringify({ d: b.done, s: b.startDate, r: b.reviewed });
+  }
+  function loadLocal() {
+    try { const raw = localStorage.getItem(LS_KEY); if (raw) return normalize(JSON.parse(raw)); } catch (e) { /* storage unavailable */ }
+    return null;
+  }
+  function saveLocal() {
+    try { localStorage.setItem(LS_KEY, JSON.stringify(serialize())); } catch (e) { /* storage unavailable */ }
+  }
+  function setSaveMode(mode, text) {
+    saveMode = mode;
+    const el = document.getElementById('save');
+    el.dataset.mode = mode;
+    document.getElementById('saveText').textContent = text;
+  }
+  // 每次用户改动都经过这里：先落本机，再尽快写云端。
+  function touch() {
+    state.updatedAt = new Date().toISOString();
+    localVersion++;
+    saveLocal();
+    if (!dbDoc) { setSaveMode('local', 'Checkpoint · 已保存在本机'); return; }
+    setSaveMode('saving', 'Checkpoint · 保存中');
+    clearTimeout(writeTimer);
+    writeTimer = setTimeout(flush, 120); // 只为合并连点，不再长时间延迟
+  }
+  function flush() {
+    if (!dbDoc || writing) return;
+    if (localVersion === savedVersion) { setSaveMode('cloud', 'Checkpoint · 已同步到云端'); return; }
+    const v = localVersion;
+    writing = true;
+    dbDoc.set(serialize()).then(() => {
+      writing = false; writeFailures = 0; savedVersion = v;
+      if (localVersion !== savedVersion) flush(); // 写入期间又有改动，接着写
+      else setSaveMode('cloud', 'Checkpoint · 已同步到云端');
+    }).catch(() => {
+      writing = false; writeFailures++;
+      if (writeFailures >= 3) {
+        dbDoc = null;
+        setSaveMode('local', 'Checkpoint · 云端不可用，已保存在本机');
+        return;
+      }
+      setSaveMode('saving', 'Checkpoint · 云端暂不可用，稍后重试');
+      setTimeout(flush, 2500);
+    });
+  }
+  async function initDb() {
+    let db = null;
+    try {
+      if (window.claude && typeof window.claude.use === 'function') db = await window.claude.use('db');
+    } catch (e) { db = null; }
+    if (!db) {
+      setSaveMode('local', 'Checkpoint · 保存在本机');
+      document.getElementById('footNote').textContent = '当前进度保存在这台设备的浏览器里；在 claude.ai 里打开可同步到云端。';
+      return;
+    }
+    dbDoc = db.doc('progress/main');
+    dbDoc.onSnapshot(snap => {
+      if (!snap.exists) {
+        // 云端还没有记录：用这台设备的进度建档
+        if (!snap.metadata.fromCache && !seeded) { seeded = true; localVersion++; flush(); }
+        return;
+      }
+      seeded = true;
+      if (snap.metadata.hasPendingWrites) return;           // 自己刚写的回显，不用处理
+      if (writing || localVersion !== savedVersion) return; // 本地还有没写完的改动，云端快照一律不采纳
+      const remote = normalize(snap.data());
+      if (state.updatedAt && remote.updatedAt && remote.updatedAt < state.updatedAt) {
+        // 本机比云端新（比如上次关页面前没写完）：把本机推上去
+        localVersion++; flush();
+        return;
+      }
+      if (!sameContent(remote, state)) {
+        state = remote;
+        saveLocal();
+        syncDom(); // 就地更新勾选框，不重建页面
+      } else if (remote.updatedAt) {
+        state.updatedAt = remote.updatedAt;
+      }
+      setSaveMode('cloud', 'Checkpoint · 已同步到云端');
+    }, () => {
+      dbDoc = null;
+      setSaveMode('local', 'Checkpoint · 云端不可用，已保存在本机');
+    });
+  }
+  // 关页面前把还没写完的改动尽力送出去
+  window.addEventListener('pagehide', () => { if (dbDoc && !writing && localVersion !== savedVersion) { clearTimeout(writeTimer); flush(); } });
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && dbDoc && !writing && localVersion !== savedVersion) { clearTimeout(writeTimer); flush(); } });
+
+  /* =========================== 渲染 =========================== */
+  function renderStats() {
+    const all = PLAN.phases.reduce((a, p) => { const pr = progress(p); a.done += pr.done; a.total += pr.total; return a; }, { done: 0, total: 0 });
+    const dl = PLAN.phases.reduce((a, p) => { const pr = delivProgress(p); a.done += pr.done; a.total += pr.total; return a; }, { done: 0, total: 0 });
+    const pct = all.total ? Math.round(all.done / all.total * 100) : 0;
+    const cur = currentPhase();
+    const wi = weekInfo();
+    const expected = phaseForWeek(wi.week);
+    const curIdx = PLAN.phases.indexOf(cur);
+    const expIdx = expected ? PLAN.phases.indexOf(expected) : -1;
+
+    let weekV, weekD;
+    if (wi.week == null) { weekV = '—'; weekD = '先在页脚设置开始日期'; }
+    else if (wi.week < 0) { weekV = '开始前'; weekD = '第 1 周从 ' + state.startDate + ' 起'; }
+    else if (wi.week > 26) { weekV = 'W26+'; weekD = '26 周已过，进入自由复盘'; }
+    else { weekV = 'W' + wi.week; weekD = weekRange(wi.week) + (wi.week === 0 ? ' · 准备周' : ''); }
+
+    let pace = '', paceCls = '';
+    if (expIdx >= 0 && wi.week >= 0) {
+      if (curIdx > expIdx) { pace = '领先 ' + (curIdx - expIdx) + ' 个阶段'; paceCls = 'ahead'; }
+      else if (curIdx === expIdx) { pace = '按计划'; paceCls = 'done'; }
+      else { pace = '落后 ' + (expIdx - curIdx) + ' 个阶段'; paceCls = 'behind'; }
+    } else if (wi.week != null && wi.week < 0) { pace = '尚未开始'; paceCls = ''; }
+
+    const allDone = PLAN.phases.every(p => statusOf(p) === 'done');
+    document.getElementById('stats').innerHTML = `
+      <div class="stat">
+        <p class="k">总进度</p>
+        <p class="v">${pct}<small>%</small><small>· ${all.done} / ${all.total} 项</small></p>
+        <div class="bar${allDone ? ' done' : ''}"><i style="width:${pct}%"></i></div>
+      </div>
+      <div class="stat">
+        <p class="k">当前周</p>
+        <p class="v">${esc(weekV)}<small>/ 26</small></p>
+        <p class="d">${esc(weekD)}</p>
+      </div>
+      <div class="stat">
+        <p class="k">当前阶段</p>
+        <p class="v">${cur.code}<small>${esc(cur.short)}</small></p>
+        <p class="d">${pace ? `<span class="pill ${paceCls}">${esc(pace)}</span>` : ''}${expected && expected.id !== cur.id ? `<span>按日历应在 ${expected.code}</span>` : ''}</p>
+      </div>
+      <div class="stat">
+        <p class="k">输出成果</p>
+        <p class="v">${dl.done}<small>/ ${dl.total} 项验收</small></p>
+        <div class="bar${dl.done === dl.total ? ' done' : ''}"><i style="width:${dl.total ? dl.done / dl.total * 100 : 0}%"></i></div>
+      </div>`;
+  }
+
+  function ring(pct, label, status) {
+    const r = 24, c = 2 * Math.PI * r;
+    return `<span class="ring"><svg viewBox="0 0 56 56" width="56" height="56" aria-hidden="true"><circle class="track" cx="28" cy="28" r="${r}"/><circle class="fill" cx="28" cy="28" r="${r}" stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${(c * (1 - pct)).toFixed(1)}"/></svg><b>${status === 'done' ? '✓' : label}</b></span>`;
+  }
+
+  function renderGraph() {
+    const wi = weekInfo();
+    const expected = phaseForWeek(wi.week);
+    const sel = selectedPhaseId();
+    document.getElementById('nodes').innerHTML = PLAN.phases.map(p => {
+      const pr = progress(p); const st = statusOf(p);
+      const stLabel = st === 'done' ? '已完成' : st === 'active' ? '进行中' : '未开始';
+      return `<button class="node" type="button" data-phase="${p.id}" data-status="${st}" aria-pressed="${sel === p.id}" title="${esc(p.name)}">
+        ${expected && expected.id === p.id ? '<span class="here">本周</span>' : ''}
+        ${ring(pr.pct, Math.round(pr.pct * 100) + '%', st)}
+        <span class="nm">${esc(p.short)}</span>
+        <span class="wk">${p.w0 === p.w1 ? 'W' + p.w0 : 'W' + p.w0 + '–' + p.w1} · ${p.hours}h</span>
+        <span class="pill ${st} st">${p.code} ${stLabel}</span>
+      </button>`;
+    }).join('');
+
+    const cells = [];
+    for (let w = 0; w <= 26; w++) {
+      const p = phaseForWeek(w);
+      const idx = p ? PLAN.phases.indexOf(p) : 0;
+      const cls = ['cell'];
+      if (p && statusOf(p) === 'done') cls.push('phase-done');
+      else if (wi.week != null && wi.week >= 0 && w < wi.week) cls.push('past');
+      if (wi.week === w) cls.push('now');
+      cells.push(`<span class="${cls.join(' ')}" data-alt="${idx % 2}" title="W${w} · ${p ? esc(p.short) : ''}${weekRange(w) ? ' · ' + weekRange(w) : ''}">${w}</span>`);
+    }
+    document.getElementById('strip').innerHTML = cells.join('');
+    const start = parseDate(state.startDate);
+    let right = '';
+    if (start) {
+      const end = new Date(start); end.setDate(end.getDate() + 26 * 7 - 1);
+      right = '第 1 周 ' + fmtDate(start) + ' → 第 26 周止 ' + fmtDate(end);
+    }
+    document.getElementById('weeksRight').textContent = right;
+  }
+
+  function selectedPhaseId() {
+    if (activeTab === 'auto') return currentPhase().id;
+    if (activeTab === 'jd' || activeTab === 'rhythm') return null;
+    return activeTab;
+  }
+
+  function renderTabs() {
+    const sel = activeTab === 'auto' ? currentPhase().id : activeTab;
+    const items = PLAN.phases.map(p => `<button class="tab" role="tab" type="button" data-tab="${p.id}" aria-selected="${sel === p.id}"><span class="mini ${statusOf(p)}"></span><span class="code">${p.code}</span>${esc(p.short)}</button>`);
+    items.push(`<button class="tab util" role="tab" type="button" data-tab="jd" aria-selected="${sel === 'jd'}">JD 基准</button>`);
+    items.push(`<button class="tab" role="tab" type="button" data-tab="rhythm" aria-selected="${sel === 'rhythm'}">节奏与原则</button>`);
+    document.getElementById('tabs').innerHTML = items.join('');
+  }
+
+  function checkItem(id, text, hint) {
+    const on = !!state.done[id];
+    return `<li><label class="item${on ? ' checked' : ''}"><input type="checkbox" data-id="${id}"${on ? ' checked' : ''}><span class="t">${esc(text)}${hint ? `<span class="hint">${esc(hint)}</span>` : ''}</span></label></li>`;
+  }
+
+  function renderPhase(p) {
+    const pr = progress(p); const dl = delivProgress(p); const st = statusOf(p);
+    const tDone = p.topics.filter((_, i) => state.done[p.id + '.t' + i]).length;
+    const rDone = p.resources.filter((_, i) => state.done[p.id + '.r' + i]).length;
+    const vDone = p.videos.filter((_, i) => state.done[p.id + '.v' + i]).length;
+    const jdTags = p.jd.map(t => `<span class="jd-tag${/必备/.test(t) ? ' must' : ''}">${esc(t)}</span>`).join('');
+    const review = state.reviewed[p.id] || '';
+
+    const resList = p.resources.length ? `<ul class="res">${p.resources.map((r, i) => {
+      const id = p.id + '.r' + i; const on = !!state.done[id];
+      return `<li class="${on ? 'checked' : ''}"><label class="rrow"><input type="checkbox" data-id="${id}" aria-label="已读：${esc(r[0])}"${on ? ' checked' : ''}><div><div class="rt"><a href="${r[1]}" target="_blank" rel="noopener">${esc(r[0])}</a><span class="chip">${TYPE_ZH[r[2]] || r[2]}</span><span class="chip ${r[3] === 'ZH' ? 'zh' : 'en'}">${r[3]}</span></div>${r[4] ? `<div class="rn">${esc(r[4])}</div>` : ''}</div></label></li>`;
+    }).join('')}</ul>` : '<p class="empty">本阶段没有额外资料。</p>';
+
+    const vidList = p.videos.length ? `<ul class="res vid">${p.videos.map((v, i) => {
+      const id = p.id + '.v' + i; const on = !!state.done[id];
+      return `<li class="${on ? 'checked' : ''}"><label class="rrow"><input type="checkbox" data-id="${id}" aria-label="已看：${esc(v[0])}"${on ? ' checked' : ''}><div><div class="rt"><a href="${v[2]}" target="_blank" rel="noopener">${esc(v[0])}</a><span class="chip ${v[3] === 'ZH' ? 'zh' : 'en'}">${v[3] === 'ZH' ? '中文' : 'EN'}</span>${v[4] ? `<span class="chip len">${esc(v[4])}</span>` : ''}</div><div class="rn"><span class="ch">${esc(v[1])}</span>${v[5] ? ' · ' + esc(v[5]) : ''}</div></div></label></li>`;
+    }).join('')}</ul>` : '<p class="empty">准备周不需要看视频，把环境配好就是最好的学习。</p>';
+
+    const proj = p.project ? `<div class="proj">
+        <p class="pn"><span class="code">${p.project.code}</span>${esc(p.project.name)}</p>
+        <p>${esc(p.project.desc)}</p>
+        <ol>${p.project.build.map(b => `<li>${esc(b)}</li>`).join('')}</ol>
+      </div>` : '<p class="empty">准备周没有里程碑项目；产出就是一个能跑的环境和仓库骨架。</p>';
+
+    document.getElementById('panel').innerHTML = `
+      <div class="phead">
+        <div>
+          <h2><span class="code">${p.code}</span>${esc(p.name)}</h2>
+          <div class="meta">
+            <span class="pill ${st}">${st === 'done' ? '已完成' : st === 'active' ? '进行中' : '未开始'}</span>
+            <span class="pill">${p.w0 === p.w1 ? '第 ' + p.w0 + ' 周' : '第 ' + p.w0 + '–' + p.w1 + ' 周'}</span>
+            <span class="pill">≈ ${p.hours} 小时</span>
+          </div>
+          <p class="goal">${esc(p.goal)}</p>
+          ${jdTags ? `<div class="jd-tags">${jdTags}</div>` : ''}
+        </div>
+        <aside class="pside">
+          <div class="row"><span>清单完成率</span><b>${Math.round(pr.pct * 100)}%（${pr.done}/${pr.total}）</b></div>
+          <div class="bar${st === 'done' ? ' done' : ''}" style="margin:8px 0 12px"><i style="width:${pr.pct * 100}%"></i></div>
+          <div class="row"><span>验收成果</span><b>${dl.done} / ${dl.total}</b></div>
+          <div class="row"><span>学习内容</span><b>${tDone} / ${p.topics.length}</b></div>
+          <div class="row"><span>资料 · 视频</span><b>${rDone} / ${p.resources.length} · ${vDone} / ${p.videos.length}</b></div>
+          <div class="row"><span>验收日期</span><input type="date" data-review="${p.id}" value="${esc(review)}"></div>
+        </aside>
+      </div>
+      <div class="cols">
+        <div class="col">
+          <section class="block">
+            <h3>学习内容 <span class="cnt">${tDone} / ${p.topics.length}</span></h3>
+            <p class="lead">带着项目里的具体问题读，读到能动手的点就停下来做。</p>
+            <ul class="list">${p.topics.map((t, i) => checkItem(p.id + '.t' + i, t[0], t[1])).join('')}</ul>
+          </section>
+          <section class="block">
+            <h3>项目实践</h3>
+            ${proj}
+          </section>
+          <section class="block">
+            <h3>输出成果 · 验收 <span class="cnt">${dl.done} / ${dl.total}</span></h3>
+            <p class="lead">全部打勾即视为本阶段验收通过；每一项都应该能写进简历或在面试里讲出数字。</p>
+            <ul class="list">${p.deliverables.map((d, i) => checkItem(p.id + '.d' + i, d[0], d[1])).join('')}</ul>
+          </section>
+        </div>
+        <div class="col">
+          <section class="block">
+            <h3>权威资料 <span class="cnt">${rDone} / ${p.resources.length}</span></h3>
+            <p class="lead">官方文档、原始论文与一手文章；勾选表示已读。</p>
+            ${resList}
+          </section>
+          <section class="block">
+            <h3>视频 <span class="cnt">${vDone} / ${p.videos.length}</span></h3>
+            <p class="lead">中文视频用来建立直觉，英文官方视频用来对齐一手口径。</p>
+            ${vidList}
+          </section>
+        </div>
+      </div>`;
+  }
+
+  function renderJd() {
+    const rows = PLAN.jd.map(r => `<tr>
+        <td class="nowrap">${r[5] ? '<b>' + esc(r[0]) + '</b>' : esc(r[0])}</td>
+        <td><span class="freq ${r[2]}">${esc(r[1])}</span></td>
+        <td>${esc(r[3])}</td>
+        <td class="nowrap mono">${esc(r[4])}</td>
+      </tr>`).join('');
+    document.getElementById('panel').innerHTML = `<div class="doc">
+      <h2>JD 基准：大模型应用栈</h2>
+      <p class="intro">这张表来自对 2026 年大厂 JD 的分析（副标题原文："真正区分档位的地方"），是整份计划的验收基准；最右一列是本计划覆盖它的阶段。</p>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>技能</th><th>频率</th><th>JD 原文级细节</th><th>覆盖阶段</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div>
+      <h3>怎么用这张表</h3>
+      <p>每个月末验收时，回到这里对照一次：这一项 JD 技能，我现在能不能拿出一个项目、一个数字、一篇笔记来证明？三样里缺哪样，下个月的输出就补哪样。"必备"三项到 M4 结束时必须全部有作品集证据；两个"新兴"项在 M5 补齐。</p>
+    </div>`;
+  }
+
+  function renderRhythm() {
+    document.getElementById('panel').innerHTML = `<div class="doc">
+      <h2>节奏与原则</h2>
+      <p class="intro">每周 8–12 小时怎么分，以及三条贯穿始终的原则和七个资深研发容易踩的坑。</p>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>时段</th><th>时长</th><th>内容</th></tr></thead>
+        <tbody>
+          <tr><td class="nowrap">输入</td><td class="nowrap mono">2–3 h</td><td>文档 / 课程 / 论文，带着当周项目的具体问题读，不做无目标的通读。</td></tr>
+          <tr><td class="nowrap">动手</td><td class="nowrap mono">5–7 h</td><td>项目代码，拆成两次 2.5–3.5 小时的深度时段，效果远好于每天 1 小时。</td></tr>
+          <tr><td class="nowrap">评测与复盘</td><td class="nowrap mono">1 h</td><td>跑评测、看 trace、更新学习日志。</td></tr>
+          <tr><td class="nowrap">输出</td><td class="nowrap mono">0.5–1 h</td><td>每周一条学习笔记；每月一篇长文或一次项目 README 完善。</td></tr>
+        </tbody>
+      </table></div>
+      <h3>学习日志模板（每周一条，放在 docs/journal/）</h3>
+<pre>## Week N（日期）
+- 本周做了什么（3 行以内）
+- 一个数字：本周项目里能量化的一个结果
+- 一个坑：踩了什么、怎么解决
+- 一个问题：还没想明白的事（下周输入阶段优先解决）
+- 面试视角：如果面试官问这周的东西，我会怎么讲</pre>
+      <h3>三条原则</h3>
+      <div class="principles">
+        <div class="principle"><b>项目驱动，评测先行</b><p>每个项目在写 Agent 之前先写 10 条测试用例。能不能说出"改了 X 之后指标从 71% 到 84%"，是档位的分水岭。</p></div>
+        <div class="principle"><b>主线一条，广度靠对照</b><p>LangGraph 深挖到源码级；其余框架用"读设计 + 做一次同任务对照实验"覆盖，不平均用力。</p></div>
+        <div class="principle"><b>用资深研发的肌肉记忆</b><p>状态机、契约设计、可观测、幂等重试、测试金字塔，直接迁移到 Agent 工程上。这是与应届 AI 候选人拉开差距的地方。</p></div>
+      </div>
+      <h3>七个反模式</h3>
+      <ul class="anti">
+        <li><b>课程囤积症。</b>只看不做。任何课程时间不超过当周项目时间的三分之一。</li>
+        <li><b>框架跳跃。</b>同时学五个框架，每个都停在 quickstart。LangGraph 是唯一主线。</li>
+        <li><b>没有评测的 Demo。</b>面试时说不出任何数字。先写用例再写 Agent。</li>
+        <li><b>过早追新、死记 API。</b>MCP 规范每半年一变。学"为什么这样设计"，API 细节现查。</li>
+        <li><b>把 Agent 当银弹。</b>确定性工作流能解决的不要上 Agent；多 Agent 会带来上下文碎片化和成本翻倍。</li>
+        <li><b>忽视成本与安全。</b>从 P1 起记成本，从 P3 起做工具权限最小化和 prompt injection 防护。</li>
+        <li><b>用老经验硬套。</b>状态机思维是优势，但"断言相等"式的测试思维要换成"评分与阈值"。</li>
+      </ul>
+      <h3>时间不够时怎么调</h3>
+      <p>某月落后，优先压缩该月的理论输入而不是项目；整体提前，把多出来的时间投到 M5（评测与上下文工程），那是投入产出比最高的部分。</p>
+    </div>`;
+  }
+
+  function renderPanel() {
+    const sel = activeTab === 'auto' ? currentPhase().id : activeTab;
+    if (sel === 'jd') renderJd();
+    else if (sel === 'rhythm') renderRhythm();
+    else renderPhase(PLAN.phases.find(p => p.id === sel) || currentPhase());
+  }
+
+  function render() {
+    renderStats();
+    renderGraph();
+    renderTabs();
+    renderPanel();
+    document.getElementById('startDate').value = state.startDate;
+  }
+
+  function visiblePhase() {
+    const sel = activeTab === 'auto' ? currentPhase().id : activeTab;
+    return PLAN.phases.find(p => p.id === sel) || null;
+  }
+
+  // 只刷新当前阶段面板里的计数、进度条和状态标签，不重建清单
+  function refreshCounters(p) {
+    const aside = document.querySelector('.pside');
+    if (!aside || !document.querySelector('.phead h2 .code') || document.querySelector('.phead h2 .code').textContent !== p.code) return;
+    const pr = progress(p); const dl = delivProgress(p);
+    const tDone = p.topics.filter((_, i) => state.done[p.id + '.t' + i]).length;
+    const rDone = p.resources.filter((_, i) => state.done[p.id + '.r' + i]).length;
+    const vDone = p.videos.filter((_, i) => state.done[p.id + '.v' + i]).length;
+    const bs = aside.querySelectorAll('.row b');
+    if (bs.length >= 4) {
+      bs[0].textContent = Math.round(pr.pct * 100) + '%（' + pr.done + '/' + pr.total + '）';
+      bs[1].textContent = dl.done + ' / ' + dl.total;
+      bs[2].textContent = tDone + ' / ' + p.topics.length;
+      bs[3].textContent = rDone + ' / ' + p.resources.length + ' · ' + vDone + ' / ' + p.videos.length;
+    }
+    const bar = aside.querySelector('.bar');
+    if (bar) { bar.classList.toggle('done', statusOf(p) === 'done'); bar.querySelector('i').style.width = (pr.pct * 100) + '%'; }
+    const cnts = document.querySelectorAll('.block h3 .cnt');
+    if (cnts.length === 4) { cnts[0].textContent = tDone + ' / ' + p.topics.length; cnts[1].textContent = dl.done + ' / ' + dl.total; cnts[2].textContent = rDone + ' / ' + p.resources.length; cnts[3].textContent = vDone + ' / ' + p.videos.length; }
+    const pill = document.querySelector('.phead .meta .pill'); const st = statusOf(p);
+    if (pill) { pill.className = 'pill ' + st; pill.textContent = st === 'done' ? '已完成' : st === 'active' ? '进行中' : '未开始'; }
+  }
+
+  // 云端状态到达时就地更新页面：勾选框、日期、统计，不销毁正在操作的 DOM
+  function syncDom() {
+    document.querySelectorAll('input[type="checkbox"][data-id]').forEach(cb => {
+      const on = !!state.done[cb.dataset.id];
+      if (cb.checked !== on) cb.checked = on;
+      const wrap = cb.closest('.item, li');
+      if (wrap) wrap.classList.toggle('checked', on);
+    });
+    document.querySelectorAll('input[data-review]').forEach(i => { i.value = state.reviewed[i.dataset.review] || ''; });
+    const sd = document.getElementById('startDate'); if (sd) sd.value = state.startDate;
+    renderStats(); renderGraph(); renderTabs();
+    const p = visiblePhase(); if (p) refreshCounters(p);
+  }
+
+  /* =========================== 事件 =========================== */
+  document.addEventListener('change', e => {
+    const t = e.target;
+    if (t.matches('input[type="checkbox"][data-id]')) {
+      const id = t.dataset.id;
+      const p = PLAN.phases.find(x => id.startsWith(x.id + '.'));
+      // 一旦开始勾选，就把标签固定在这个阶段，完成后不会自动跳到下一阶段
+      if (activeTab === 'auto' && p) { activeTab = p.id; rememberTab(); }
+      if (t.checked) state.done[id] = true; else delete state.done[id];
+      const wrap = t.closest('.item, li');
+      if (wrap) wrap.classList.toggle('checked', t.checked);
+      touch();
+      renderStats(); renderGraph(); renderTabs();
+      if (p) refreshCounters(p);
+    } else if (t.matches('input[data-review]')) {
+      const pid = t.dataset.review;
+      if (t.value) state.reviewed[pid] = t.value; else delete state.reviewed[pid];
+      touch();
+    } else if (t.id === 'startDate') {
+      if (parseDate(t.value)) { state.startDate = t.value; touch(); renderStats(); renderGraph(); }
+    }
+  });
+
+  document.addEventListener('click', e => {
+    const node = e.target.closest('.node[data-phase]');
+    if (node) { activeTab = node.dataset.phase; rememberTab(); renderGraph(); renderTabs(); renderPanel(); document.getElementById('tabs').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+    const tab = e.target.closest('.tab[data-tab]');
+    if (tab) { activeTab = tab.dataset.tab; rememberTab(); renderGraph(); renderTabs(); renderPanel(); return; }
+    if (e.target.id === 'reset') {
+      const btn = e.target;
+      if (btn.dataset.armed === '1') {
+        state = { done: {}, startDate: state.startDate, reviewed: {}, updatedAt: '' };
+        touch(); render();
+        btn.dataset.armed = ''; btn.textContent = '重置全部进度'; btn.classList.remove('warn');
+      } else {
+        btn.dataset.armed = '1'; btn.textContent = '再点一次确认清空所有勾选'; btn.classList.add('warn');
+        setTimeout(() => { btn.dataset.armed = ''; btn.textContent = '重置全部进度'; btn.classList.remove('warn'); }, 4000);
+      }
+    }
+  });
+
+  function rememberTab() { try { localStorage.setItem(LS_TAB, activeTab); } catch (e) { /* ignore */ } }
+
+  /* =========================== 启动 =========================== */
+  const local = loadLocal();
+  if (local) state = local;
+  try { const t = localStorage.getItem(LS_TAB); if (t && (t === 'jd' || t === 'rhythm' || PLAN.phases.some(p => p.id === t))) activeTab = t; } catch (e) { /* ignore */ }
+  render();
+  initDb();
+})();
+</script>
+</body>
+</html>
