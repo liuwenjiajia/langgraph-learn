@@ -13,6 +13,14 @@ model = os.environ.get("ANTHROPIC_MODEL")
 
 messages = []
 
+def add_user_message(messages, text):
+    user_message = {"role": "user", "content": text}
+    messages.append(user_message)
+
+def add_assistant_message(messages, text):
+    assistant_message = {"role": "assistant", "content": text}
+    messages.append(assistant_message)
+
 system_prompt = """
 You are a patient math tutor.
 Do not directly answer a student's questions.
@@ -30,10 +38,10 @@ while True:
     if user_input.lower() in ("exit", "quit"):
         break
 
-    messages.append({"role": "user", "content": user_input})
+    add_user_message(messages, user_input)
 
     with client.messages.stream(
-        model="deepseek-v4-flash",
+        model=model,
         max_tokens=100000,
         messages=messages,
         system=system_prompt,
@@ -44,4 +52,4 @@ while True:
             print(text, end="")
             chunks.append(text)
 
-    messages.append({"role": "assistant", "content": "".join(chunks)})
+    add_assistant_message(messages, "".join(chunks))

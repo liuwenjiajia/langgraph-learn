@@ -1,0 +1,11 @@
+[
+  {
+    "task": "Write a Python function using boto3 that takes an S3 bucket name and object key, and returns the object's size in bytes using the head_object API."
+  },
+  {
+    "task": "Create a JSON object representing an AWS IAM policy that allows the s3:GetObject and s3:PutObject actions on all objects within the bucket 'my-data-bucket', including the required Version and Statement fields."
+  },
+  {
+    "task": "Write a regex that matches valid AWS S3 bucket names, which must be 3-63 characters long, contain only lowercase letters, numbers, dots, and hyphens, start and end with a letter or number, and must not contain consecutive dots."
+  }
+]
