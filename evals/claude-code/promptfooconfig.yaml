@@ -1,0 +1,52 @@
+# Claude Code 定制 A/B 评测：同一批用例，对比"无定制"与"加载 ~/.claude 用户级定制"。
+# 鉴权走本机 Claude 订阅登录（Max），不需要 API key。用法见仓库 README「评测」一节。
+description: claude-code-customization-ab
+
+providers:
+  - id: anthropic:claude-agent-sdk
+    label: baseline
+    config: &common
+      apiKeyRequired: false                # 跳过 API key 预检，由 Claude Code 用订阅登录鉴权
+      model: haiku                         # 两臂固定同一模型；换模型只改这里
+      max_turns: 10
+      working_dir: fixtures/demo-project   # 只开放 Read / Grep / Glob / LS 只读工具
+      skills: all
+      setting_sources: []                  # 不加载任何 settings、CLAUDE.md、个人 skill、插件
+  - id: anthropic:claude-agent-sdk
+    label: user-config
+    config:
+      <<: *common
+      setting_sources: [user]              # 加载 ~/.claude 下的 settings.json、CLAUDE.md、skills、插件
+
+prompts:
+  - '{{task}}'
+
+# 故意用英文提问、不提任何规则，才能测出规则是否来自 CLAUDE.md。
+tests:
+  - description: 默认中文回复
+    vars:
+      task: What is 1+1? Answer in one short sentence.
+    assert:
+      - type: javascript
+        metric: rule-zh-reply
+        value: /[一-鿿]/.test(output)
+
+  - description: 改配置前先对齐架构，并意识到要同步 README
+    vars:
+      task: >-
+        I want to add a LOG_LEVEL config option (default "info", read from the environment)
+        to this project. Before changing anything, tell me which files need to change and why.
+        Do not edit any files.
+    assert:
+      - type: javascript
+        metric: outcome-config-py
+        value: /config\.py/.test(output)
+      - type: javascript
+        metric: rule-read-architecture
+        value: (context.metadata?.toolCalls ?? []).some(c => c.name === 'Read' && /ARCHITECTURE\.md/.test(JSON.stringify(c.input)))
+      - type: javascript
+        metric: rule-sync-readme
+        value: /README/i.test(output)
+      - type: javascript
+        metric: rule-zh-reply
+        value: /[一-鿿]/.test(output)

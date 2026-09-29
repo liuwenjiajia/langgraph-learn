@@ -1,0 +1,41 @@
+# skill 触发率：只跑"有定制"的臂。
+# "skill 是否被调用"只可能在加载了定制时成立；放进 A/B 会拉低 baseline、虚增差值，所以单独成套。
+# 用例覆盖：显式点名、自然表述（应触发）+ 近似但不同的需求（不应触发）。
+description: claude-code-skill-trigger
+
+providers:
+  - id: anthropic:claude-agent-sdk
+    label: user-config
+    config:
+      apiKeyRequired: false
+      model: haiku
+      max_turns: 5
+      skills: all
+      setting_sources: [user]
+
+prompts:
+  - '{{task}}'
+
+tests:
+  - description: 显式点名 → 应触发 grilling
+    vars:
+      task: 用 grilling 技能质询我的计划：这周末学完 LangGraph。只问我一个问题就停。
+    assert:
+      - type: skill-used
+        value: mattpocock-skills:grilling
+
+  - description: 不点名、自然表述 → 应触发 grill 系列 skill
+    vars:
+      task: 我打算这周末学完 LangGraph，帮我狠狠拷问一下这个计划，一次只问一个问题。
+    assert:
+      - type: skill-used
+        value:
+          pattern: mattpocock-skills:grill*
+
+  - description: 近似但不同的需求（排计划而非拷问计划）→ 不应触发 grill 系列 skill
+    vars:
+      task: 帮我列一个这周末学习 LangGraph 的时间安排，按上午、下午分块，简短即可。
+    assert:
+      - type: not-skill-used
+        value:
+          pattern: mattpocock-skills:grill*

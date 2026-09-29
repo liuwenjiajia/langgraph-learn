@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 client = anthropic.Anthropic(
-    base_url=os.environ.get("ANTHROPIC_BASE_URL", "https://opencode.ai/zen/v1"),
+    base_url=os.environ.get("ANTHROPIC_BASE_URL"),
     api_key=os.environ["OPENCODE_API_KEY"],
 )
 model = os.environ.get("ANTHROPIC_MODEL", "claude-opus-5")

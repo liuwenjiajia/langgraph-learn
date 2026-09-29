@@ -1,0 +1,16 @@
+{
+  "name": "claude-code-evals",
+  "private": true,
+  "description": "Claude Code 定制效果 A/B 评测：promptfoo + Claude Agent SDK，走本机 Claude 订阅登录，无需 API key",
+  "scripts": {
+    "eval": "promptfoo eval -c promptfooconfig.yaml --no-cache --repeat 3",
+    "eval:skills": "promptfoo eval -c skill-trigger.yaml --no-cache --repeat 3",
+    "view": "promptfoo view"
+  },
+  "devDependencies": {
+    "@anthropic-ai/claude-agent-sdk": "0.3.263",
+    "@anthropic-ai/sdk": "0.124.0",
+    "@modelcontextprotocol/sdk": "1.30.0",
+    "zod": "4.6.5"
+  }
+}
