@@ -1,11 +1,13 @@
 import json
 import os
+from pathlib import Path
 
 import anthropic
 from dotenv import load_dotenv
 
 # .env 优先于已有环境变量：宿主环境（如 Claude 桌面应用）可能已设 ANTHROPIC_BASE_URL，不覆盖会把 key 发错端点
-load_dotenv()
+HERE = Path(__file__).resolve().parent  # 脚本所在目录，数据文件放这里，与运行时的工作目录无关
+load_dotenv(HERE.parents[1] / ".env", override=True)
 
 client = anthropic.Anthropic(
     base_url=os.environ.get("ANTHROPIC_BASE_URL"),
@@ -67,7 +69,7 @@ def generate_dataset():
 ## 运行生成测试数据时打开
 # dataset = generate_dataset()
 # print(dataset)
-# with open('dataset.json', 'w') as f:
+# with open(HERE / 'dataset.json', 'w') as f:
 #     json.dump(dataset, f, indent=2)
 
 
@@ -84,17 +86,39 @@ Please solve the following task:
     output = chat(messages)
     return output
 
+def grade_by_model(test_case, output):
+    # 创建评估提示
+    eval_prompt = f"""
+    You are an expert code reviewer. Evaluate this AI-generated solution.
+    
+    Task: {test_case['task']}
+    Solution: {output}
+    
+    Provide your evaluation as a structured JSON object with:
+    - "strengths": An array of 1-3 key strengths
+    - "weaknesses": An array of 1-3 key areas for improvement  
+    - "reasoning": A concise explanation of your assessment
+    - "score": A number between 1-10
+    """
+    
+    messages = []
+    add_user_message(messages, eval_prompt)
+    add_assistant_message(messages, "```json")
+
+    eval_text = chat(messages, stop_sequences=["```"])
+    return json.loads(eval_text)
+
 def run_test_case(test_case):
     """Calls run_prompt, then grades the result"""
     output = run_prompt(test_case)
     
     # TODO - 评分
-    score = 10
+    score = grade_by_model(test_case, output)
     
     return {
         "output": output,
         "test_case": test_case,
-        "score": score
+        "score": score["score"]
     }
     
 def run_eval(dataset):
@@ -107,7 +131,7 @@ def run_eval(dataset):
     
     return results
 
-with open("dataset.json", "r") as f:
+with open(HERE / "dataset.json", "r") as f:
     dataset = json.load(f)
 
 results = run_eval(dataset)

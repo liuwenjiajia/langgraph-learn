@@ -6,5 +6,12 @@
     ],
     "python.analysis.typeCheckingMode": "basic",
     "python.analysis.autoImportCompletions": true,
-    "python.analysis.indexing": true
+    "python.analysis.indexing": true,
+    "code-runner.executorMap": {
+        "python": "\"${workspaceFolder}/.venv/bin/python\" -u"
+    },
+    "code-runner.runInTerminal": true,
+    "code-runner.saveFileBeforeRun": true,
+    "code-runner.fileDirectoryAsCwd": false,
+    "code-runner.ignoreSelection": true
 }
