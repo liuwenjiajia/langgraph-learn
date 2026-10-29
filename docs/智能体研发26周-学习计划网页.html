@@ -2,10 +2,13 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>智能体研发 26 周</title>
+<meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
+  /* 布局：概览数字 → 今日任务 → 阶段状态图与打卡日历 → 标签页（逐日计划 / 各阶段 / JD / 节奏）。
+     冷灰纸面 + 钴蓝强调；绿 = 已完成，琥珀 = 进行中 / 推迟。 */
   :root {
     --bg: #F2F3EF;
     --surface: #FFFFFF;
@@ -90,15 +93,16 @@
   a:hover { text-decoration: underline; }
   button { font: inherit; color: inherit; }
   :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  code { font-family: var(--font-mono); font-size: .86em; background: var(--surface-2); color: var(--ink); border-radius: 4px; padding: 1px 5px; overflow-wrap: anywhere; }
   .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
-  .page { max-width: 1240px; margin: 0 auto; padding: 28px 24px 80px; }
-  @media (max-width: 640px) { .page { padding: 18px 14px 60px; } }
+  .page { max-width: 1240px; margin: 0 auto; padding-block: 28px 80px; padding-left: max(24px, env(safe-area-inset-left, 0px)); padding-right: max(24px, env(safe-area-inset-right, 0px)); }
+  @media (max-width: 640px) { .page { padding-block: 18px 60px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); } }
 
   /* ---------- header ---------- */
   .top { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; flex-wrap: wrap; padding-bottom: 18px; border-bottom: 1px solid var(--line-strong); }
   .eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 6px; }
   h1 { font-family: var(--font-display); font-weight: 700; font-size: 30px; line-height: 1.2; margin: 0; letter-spacing: .01em; text-wrap: balance; }
-  .sub { margin: 6px 0 0; color: var(--ink-2); font-size: 14px; }
+  .sub { margin: 6px 0 0; color: var(--ink-2); font-size: 14px; max-width: 80ch; }
   .sub b { font-weight: 500; color: var(--ink); }
   .save { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 12px; color: var(--ink-2); background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px 6px 10px; }
   .save .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--todo); }
@@ -114,7 +118,9 @@
   .stat .k { font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 6px; }
   .stat .v { font-family: var(--font-mono); font-size: 26px; font-weight: 500; line-height: 1.1; margin: 0; font-variant-numeric: tabular-nums; display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
   .stat .v small { font-size: 13px; color: var(--ink-3); font-weight: 400; }
-  .stat .d { margin: 6px 0 0; font-size: 13px; color: var(--ink-2); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .stat .v.ahead { color: var(--done); }
+  .stat .v.behind { color: var(--active); }
+  .stat .d { margin: 6px 0 0; font-size: 13px; color: var(--ink-2); display: flex; align-items: center; gap: 6px 8px; flex-wrap: wrap; }
   .bar { height: 6px; background: var(--surface-2); border-radius: 999px; overflow: hidden; margin-top: 10px; }
   .bar i { display: block; height: 100%; background: var(--accent); border-radius: 999px; transition: width .35s ease; }
   .bar.done i { background: var(--done); }
@@ -124,6 +130,67 @@
   .pill.accent { background: var(--accent-soft); color: var(--accent); }
   .pill.ahead { background: var(--done-soft); color: var(--done); }
   .pill.behind { background: var(--active-soft); color: var(--active); }
+  .pill.solid { background: var(--accent); color: var(--accent-ink); }
+
+  /* ---------- today ---------- */
+  .today { margin-top: 20px; background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius); box-shadow: var(--shadow); }
+  .today-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 10px 18px; padding: 16px 18px 14px; border-bottom: 1px solid var(--line); }
+  .today-head > div:first-child { min-width: 0; }
+  .today-head .when { margin: 0; font-family: var(--font-mono); font-size: 12px; letter-spacing: .05em; color: var(--ink-3); }
+  .today-head h2 { margin: 4px 0 0; font-family: var(--font-display); font-size: 22px; font-weight: 700; line-height: 1.3; text-wrap: balance; }
+  .today-head h2 .code { font-family: var(--font-mono); font-size: 13px; font-weight: 500; color: var(--accent); margin-right: 10px; vertical-align: 2px; }
+  .today-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tips { margin: 0; padding: 10px 18px; list-style: none; border-bottom: 1px solid var(--line); background: var(--active-soft); font-size: 13.5px; display: grid; gap: 4px; }
+  .tips li::before { content: "提示 · "; font-family: var(--font-mono); font-size: 11.5px; color: var(--active); }
+  .today-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 320px); }
+  @media (max-width: 880px) { .today-body { grid-template-columns: minmax(0, 1fr); } }
+  .today-main { padding: 10px 14px 16px; min-width: 0; }
+  .today-side { padding: 14px 18px 16px; border-left: 1px solid var(--line); min-width: 0; display: grid; gap: 16px; align-content: start; }
+  @media (max-width: 880px) { .today-side { border-left: 0; border-top: 1px solid var(--line); } }
+  .side-k { font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 6px; }
+  .meter-v { font-family: var(--font-mono); font-size: 22px; font-weight: 500; line-height: 1.1; display: flex; align-items: baseline; gap: 6px; margin: 0; font-variant-numeric: tabular-nums; }
+  .meter-v small { font-size: 12.5px; color: var(--ink-3); font-weight: 400; }
+  .legend-line { margin: 6px 4px 0; font-size: 12px; color: var(--ink-3); }
+  .rest-note { margin: 8px 4px 12px; color: var(--ink-2); font-size: 14px; max-width: 68ch; }
+
+  /* ---------- tasks ---------- */
+  .tasks { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+  .task { display: grid; grid-template-columns: 20px 52px minmax(0, 1fr); gap: 8px; align-items: start; padding: 8px 6px 8px 4px; border-radius: 6px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .task:hover { background: var(--surface-2); }
+  .task input { margin: 3px 0 0; width: 18px; height: 18px; accent-color: var(--done); cursor: pointer; }
+  .task .min { font-family: var(--font-mono); font-size: 12px; line-height: 1.95; color: var(--accent); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .task.opt .min { color: var(--ink-3); }
+  .task .t { font-size: 14px; line-height: 1.6; min-width: 0; }
+  .task.opt .t { color: var(--ink-2); }
+  .task.checked .t { color: var(--ink-3); text-decoration: line-through; text-decoration-color: var(--line-strong); }
+  @media (max-width: 640px) { .task { grid-template-columns: 20px 44px minmax(0, 1fr); gap: 6px; } }
+  .crit { margin: 10px 4px 0; padding: 10px 12px; background: var(--surface-2); border-radius: 8px; font-size: 13.5px; color: var(--ink-2); display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 10px; }
+  .crit .k { font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .04em; color: var(--done); padding-top: 2px; white-space: nowrap; }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin: 12px 4px 0; font-size: 12.5px; color: var(--ink-3); }
+  .btn { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); border-radius: 7px; padding: 6px 12px; font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; }
+  .btn:hover { filter: brightness(1.06); }
+  .btn.ghost { background: transparent; color: var(--accent); }
+  .btn.quiet { background: transparent; border-color: var(--line); color: var(--ink-2); font-weight: 400; }
+  .btn.quiet:hover { border-color: var(--line-strong); color: var(--ink); filter: none; }
+  .date-in { font: inherit; font-family: var(--font-mono); font-size: 12.5px; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 3px 7px; }
+  .done-list { display: grid; gap: 8px; margin: 6px 4px 14px; }
+  .done-row { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; padding: 10px 12px; border-radius: 8px; background: var(--done-soft); font-size: 14px; }
+  .done-row .ok { color: var(--done); font-weight: 600; }
+  .done-row .grow { flex: 1 1 240px; min-width: 0; }
+  .done-row label { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--ink-2); }
+  .next { border: 1px dashed var(--line-strong); border-radius: 8px; padding: 10px 12px; font-size: 13.5px; display: grid; gap: 8px; }
+  .next .nt { font-weight: 600; font-size: 14px; }
+  .next .nw { font-family: var(--font-mono); font-size: 12px; color: var(--ink-3); }
+  .peek { margin-top: 4px; }
+
+  /* ---------- refs ---------- */
+  .refs { display: grid; gap: 7px; }
+  .ref { display: flex; gap: 8px; align-items: baseline; font-size: 13.5px; line-height: 1.45; min-width: 0; }
+  .ref a { font-weight: 500; overflow-wrap: anywhere; }
+  .ref.read a { color: var(--ink-3); }
+  .ref .chip { flex: none; }
+  .ref .rd { font-size: 11.5px; color: var(--done); flex: none; }
+  .refs.inline { margin: 12px 4px 0; }
 
   /* ---------- state graph ---------- */
   .graph { margin-top: 22px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 18px 16px; box-shadow: var(--shadow); }
@@ -153,20 +220,36 @@
   }
   @media (max-width: 520px) { .nodes { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
-  .weeks { margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--line); }
-  .weeks-head { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 11.5px; color: var(--ink-3); margin-bottom: 8px; }
-  .strip { display: grid; grid-template-columns: repeat(27, minmax(0, 1fr)); gap: 3px; }
-  .cell { height: 22px; border-radius: 4px; background: var(--todo-soft); position: relative; font-family: var(--font-mono); font-size: 10px; color: var(--ink-3); display: grid; place-items: center; overflow: hidden; }
-  .cell[data-alt="1"] { background: var(--surface-2); }
-  .cell.past { background: var(--line); color: var(--ink-2); }
-  .cell.past[data-alt="1"] { background: var(--line-strong); }
-  .cell.now { background: var(--accent); color: var(--accent-ink); font-weight: 500; box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent); }
-  .cell.phase-done { background: var(--done-soft); color: var(--done); }
-  @media (max-width: 640px) { .cell { font-size: 0; height: 12px; } }
+  /* ---------- check-in calendar ---------- */
+  .cal { margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--line); }
+  .cal-head { display: flex; justify-content: space-between; align-items: baseline; gap: 6px 16px; flex-wrap: wrap; margin-bottom: 10px; }
+  .cal-head h3 { margin: 0; font-size: 14px; font-weight: 600; }
+  .cal-head p { margin: 0; font-size: 12.5px; color: var(--ink-3); }
+  .cal-scroll { overflow-x: auto; padding: 4px 2px 6px; }
+  .cal-grid { display: grid; grid-template-columns: 18px repeat(var(--cols), minmax(12px, 1fr)); grid-template-rows: 16px repeat(5, 16px) repeat(2, 8px); gap: 3px; min-width: calc(18px + var(--cols) * 15px); }
+  .cal-m { grid-row: 1; font-family: var(--font-mono); font-size: 10.5px; color: var(--ink-3); white-space: nowrap; align-self: end; line-height: 1; }
+  .cal-w { grid-column: 1; font-size: 10px; line-height: 16px; color: var(--ink-3); }
+  .cc { display: block; border: 0; padding: 0; margin: 0; border-radius: 3px; background: var(--todo-soft); min-width: 0; font-size: 0; }
+  button.cc { cursor: pointer; }
+  button.cc:hover { filter: brightness(.92); }
+  .cc.pre { background: transparent; }
+  .cc.rest { background: transparent; box-shadow: inset 0 0 0 1px var(--line); }
+  .cc.hol { background: repeating-linear-gradient(135deg, var(--line-strong) 0 1.5px, transparent 1.5px 4px); }
+  .cc.done { background: var(--done); }
+  .cc.done2 { background: radial-gradient(circle, var(--surface) 0 2px, var(--done) 2.5px); }
+  .cc.covered { background: var(--done-soft); }
+  .cc.missed { background: var(--active-soft); box-shadow: inset 0 0 0 1.5px var(--active); }
+  .cc.plan { background: var(--accent-soft); }
+  .cc.plan.alt { background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line-strong); }
+  .cc.free { background: transparent; box-shadow: inset 0 0 0 1px var(--line); }
+  .cc.today { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .cal-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 8px; font-size: 12px; color: var(--ink-3); }
+  .cal-legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .cal-legend .cc { width: 12px; height: 12px; flex: none; }
 
   /* ---------- tabs ---------- */
-  .tabs { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 26px; border-bottom: 1px solid var(--line-strong); }
-  .tab { flex: 0 0 auto; background: transparent; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; padding: 10px 12px; cursor: pointer; color: var(--ink-2); font-size: 14px; display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
+  .tabs { display: flex; flex-wrap: wrap; gap: 2px; margin-top: 26px; border-bottom: 1px solid var(--line-strong); }
+  .tab { flex: 0 0 auto; background: transparent; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; padding: 10px 10px; cursor: pointer; color: var(--ink-2); font-size: 13.5px; display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
   .tab .code { font-family: var(--font-mono); font-size: 12px; color: var(--ink-3); }
   .tab:hover { color: var(--ink); }
   .tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); font-weight: 500; }
@@ -174,19 +257,67 @@
   .tab .mini { width: 8px; height: 8px; border-radius: 50%; background: var(--todo); }
   .tab .mini.done { background: var(--done); }
   .tab .mini.active { background: var(--active); }
-  .tab.util { margin-left: 10px; padding-left: 16px; border-left: 1px solid var(--line); border-radius: 0; }
+  .tab.lead { padding-right: 12px; margin-right: 4px; border-right: 1px solid var(--line); border-radius: 0; }
+  .tab.util { margin-left: 8px; padding-left: 12px; border-left: 1px solid var(--line); border-radius: 0; }
   @media (min-width: 1100px) { .tab.util { margin-left: auto; } }
 
-  /* ---------- phase panel ---------- */
+  /* ---------- daily plan ---------- */
   .panel { margin-top: 22px; }
+  .dl-tools { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .dl-tools .note { font-size: 13px; color: var(--ink-3); }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); }
+  .seg button { border: 0; background: transparent; padding: 6px 12px; font-size: 13px; color: var(--ink-2); cursor: pointer; white-space: nowrap; }
+  .seg button + button { border-left: 1px solid var(--line); }
+  .seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); font-weight: 500; }
+  .dl-phase { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); margin-bottom: 14px; overflow: hidden; }
+  .dl-phase > summary { list-style: none; cursor: pointer; display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 4px 12px; align-items: center; padding: 14px 16px; }
+  .dl-phase > summary::-webkit-details-marker { display: none; }
+  .dl-phase > summary:hover { background: var(--surface-2); }
+  .dl-phase h3 { margin: 0; font-family: var(--font-display); font-size: 17px; font-weight: 600; line-height: 1.35; }
+  .dl-phase h3 .code { font-family: var(--font-mono); font-size: 13px; color: var(--accent); margin-right: 8px; font-weight: 500; }
+  .pmeta { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-top: 6px; }
+  .chev { width: 8px; height: 8px; border-right: 2px solid var(--ink-3); border-bottom: 2px solid var(--ink-3); transform: rotate(-45deg); transition: transform .2s ease; justify-self: center; }
+  details[open] > summary .chev { transform: rotate(45deg); }
+  .dl-week { padding: 7px 16px 5px 50px; font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .03em; color: var(--ink-3); border-top: 1px solid var(--line); background: var(--bg); display: flex; gap: 8px; align-items: center; }
+  .dl-week .now { color: var(--accent); }
+  .day { border-top: 1px solid var(--line); scroll-margin-top: 80px; }
+  .day > summary { list-style: none; cursor: pointer; display: grid; grid-template-columns: 22px 132px minmax(0, 1fr) auto; grid-template-areas: "st when title meta"; gap: 4px 10px; align-items: center; padding: 10px 16px; }
+  .day > summary::-webkit-details-marker { display: none; }
+  .day > summary:hover { background: var(--surface-2); }
+  .dst { grid-area: st; width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--line-strong); display: grid; place-items: center; justify-self: center; }
+  .day[data-st="done"] .dst { background: var(--done); border-color: var(--done); }
+  .day[data-st="done"] .dst::after { content: ""; width: 4px; height: 7px; border-right: 2px solid var(--surface); border-bottom: 2px solid var(--surface); transform: translateY(-1px) rotate(45deg); }
+  .day[data-st="part"] .dst { border-color: var(--active); background: linear-gradient(90deg, var(--active) 50%, transparent 50%); }
+  .day[data-st="focus"] .dst { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .dwhen { grid-area: when; font-family: var(--font-mono); font-size: 12.5px; color: var(--ink-2); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .dwhen .n { color: var(--ink-3); margin-right: 6px; }
+  .dtitle { grid-area: title; font-size: 14.5px; font-weight: 500; min-width: 0; line-height: 1.45; }
+  .day[data-st="done"] .dtitle { color: var(--ink-3); }
+  .dmeta { grid-area: meta; display: flex; gap: 6px; align-items: center; justify-content: flex-end; flex-wrap: wrap; }
+  .day-body { padding: 2px 16px 16px 48px; }
+  .day-foot { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin: 12px 4px 0; font-size: 12.5px; color: var(--ink-3); }
+  .day-foot label { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-2); }
+  @media (max-width: 700px) {
+    .day > summary { grid-template-columns: 22px minmax(0, 1fr); grid-template-areas: "st title" ". when" ". meta"; gap: 3px 10px; padding: 10px 12px; }
+    .dmeta { justify-content: flex-start; }
+    .dmeta:empty { display: none; }
+    .day-body { padding: 2px 8px 14px 8px; }
+    .dl-week { padding-left: 16px; }
+    .dl-phase > summary { padding: 12px; }
+  }
+  .empty { font-size: 13.5px; color: var(--ink-3); margin: 0; padding: 6px 4px; }
+
+  /* ---------- phase panel ---------- */
   .phead { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 18px 28px; align-items: start; }
-  @media (max-width: 800px) { .phead { grid-template-columns: 1fr; } }
+  @media (max-width: 800px) { .phead { grid-template-columns: minmax(0, 1fr); } }
   .phead h2 { font-family: var(--font-display); font-size: 26px; font-weight: 700; margin: 0; line-height: 1.25; text-wrap: balance; }
   .phead h2 .code { font-family: var(--font-mono); font-size: 15px; font-weight: 500; color: var(--accent); margin-right: 10px; vertical-align: 3px; }
   .phead .meta { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 10px; }
   .phead .goal { margin: 12px 0 0; color: var(--ink-2); max-width: 68ch; }
-  .pside { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; min-width: 260px; }
-  .pside .row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 13px; color: var(--ink-2); }
+  .phead .pnote { margin: 10px 0 0; max-width: 68ch; font-size: 14px; color: var(--ink-2); padding: 8px 12px; background: var(--surface-2); border-radius: 8px; }
+  .pside { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; min-width: 0; width: 300px; max-width: 100%; }
+  @media (max-width: 800px) { .pside { width: auto; } }
+  .pside .row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 13px; color: var(--ink-2); flex-wrap: wrap; }
   .pside .row + .row { margin-top: 8px; }
   .pside .row b { font-family: var(--font-mono); font-weight: 500; color: var(--ink); }
   .pside input[type="date"] { font: inherit; font-family: var(--font-mono); font-size: 12.5px; color: var(--ink); background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; }
@@ -195,7 +326,7 @@
   .jd-tag.must { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
 
   .cols { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 6fr); gap: 20px; margin-top: 22px; align-items: start; }
-  @media (max-width: 960px) { .cols { grid-template-columns: 1fr; } }
+  @media (max-width: 960px) { .cols { grid-template-columns: minmax(0, 1fr); } }
   .col { display: grid; gap: 20px; min-width: 0; }
   .block { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px 14px; min-width: 0; }
   .block h3 { font-size: 15px; font-weight: 600; margin: 0 0 4px; display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
@@ -214,6 +345,17 @@
   .proj p { margin: 6px 0 0; color: var(--ink-2); font-size: 14px; }
   .proj ol { margin: 10px 0 0; padding-left: 20px; font-size: 14px; color: var(--ink); display: grid; gap: 4px; }
   .proj ol li::marker { font-family: var(--font-mono); color: var(--ink-3); font-size: 12px; }
+  .plist { list-style: none; margin: 0; padding: 0; display: grid; }
+  .plist li + li { border-top: 1px solid var(--line); }
+  .plist button { width: 100%; text-align: left; background: transparent; border: 0; display: grid; grid-template-columns: 14px 108px minmax(0, 1fr); gap: 10px; padding: 8px 4px; cursor: pointer; align-items: center; font-size: 13.5px; border-radius: 6px; }
+  .plist button:hover { background: var(--surface-2); }
+  .plist .dot { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--line-strong); }
+  .plist .dot.done { background: var(--done); border-color: var(--done); }
+  .plist .dot.part { border-color: var(--active); }
+  .plist .dot.focus { border-color: var(--accent); background: var(--accent-soft); }
+  .plist .w { font-family: var(--font-mono); font-size: 12px; color: var(--ink-3); white-space: nowrap; }
+  .plist .tt { min-width: 0; }
+  .plist .tt.done { color: var(--ink-3); }
 
   .res { list-style: none; margin: 0; padding: 0; display: grid; }
   .res li { border-top: 1px solid var(--line); }
@@ -221,7 +363,6 @@
   .rrow { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 10px; align-items: start; padding: 9px 6px 9px 4px; border-radius: 6px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
   .rrow:hover { background: var(--surface-2); }
   .rrow input { margin: 3px 0 0; width: 18px; height: 18px; accent-color: var(--done); cursor: pointer; }
-  .rrow a { cursor: pointer; }
   .res .rt { display: flex; gap: 6px 8px; flex-wrap: wrap; align-items: baseline; }
   .res .rt a { font-weight: 500; font-size: 14px; }
   .res li.checked .rt a { color: var(--ink-3); }
@@ -231,7 +372,6 @@
   .chip.en { background: var(--accent-soft); color: var(--accent); }
   .chip.len { background: transparent; border: 1px solid var(--line); color: var(--ink-3); }
   .vid .ch { font-size: 12.5px; color: var(--ink-3); }
-  .empty { font-size: 13.5px; color: var(--ink-3); margin: 0; padding: 6px 4px; }
 
   /* ---------- JD + rhythm views ---------- */
   .doc h2 { font-family: var(--font-display); font-size: 24px; font-weight: 700; margin: 0 0 6px; }
@@ -247,7 +387,7 @@
   .doc h3 { font-size: 16px; margin: 26px 0 8px; }
   .doc p { max-width: 70ch; }
   .principles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-  @media (max-width: 800px) { .principles { grid-template-columns: 1fr; } }
+  @media (max-width: 800px) { .principles { grid-template-columns: minmax(0, 1fr); } }
   .principle { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; }
   .principle b { display: block; font-size: 15px; margin-bottom: 4px; }
   .principle p { margin: 0; font-size: 13.5px; color: var(--ink-2); }
@@ -255,48 +395,65 @@
   .anti li { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; font-size: 14px; }
   .anti li b { color: var(--active); font-weight: 600; }
   pre { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; font-family: var(--font-mono); font-size: 13px; line-height: 1.6; overflow-x: auto; margin: 0; color: var(--ink); }
+  .restbox { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; display: grid; gap: 12px; }
+  .hol-row { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 10px; align-items: start; font-size: 14px; }
+  .hol-row .nm { font-weight: 500; padding-top: 3px; }
+  .hol-list { display: flex; flex-wrap: wrap; gap: 6px; }
+  .hol-chip { border: 1px solid var(--line-strong); background: var(--surface); border-radius: 999px; padding: 4px 10px; font-family: var(--font-mono); font-size: 12px; cursor: pointer; color: var(--ink-2); }
+  .hol-chip:hover { border-color: var(--accent); color: var(--accent); }
+  .hol-chip[data-on="1"] { text-decoration: line-through; color: var(--ink-3); border-style: dashed; }
+  .rest-form { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .rest-msg { font-size: 12.5px; color: var(--active); min-height: 1em; }
+  .custom-list { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+  .custom-list li { display: inline-flex; gap: 8px; align-items: center; border: 1px solid var(--line); border-radius: 999px; padding: 3px 4px 3px 10px; font-family: var(--font-mono); font-size: 12px; color: var(--ink-2); }
+  .custom-list button { border: 0; background: var(--surface-2); border-radius: 999px; padding: 2px 8px; cursor: pointer; font-size: 11.5px; color: var(--ink-2); }
 
   /* ---------- footer ---------- */
   .foot { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; align-items: center; font-size: 13px; color: var(--ink-3); }
   .foot .sched { color: var(--ink-2); }
-  .foot input[type="date"] { font: inherit; font-family: var(--font-mono); font-size: 12.5px; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; }
   .btn-ghost { background: transparent; border: 1px solid var(--line); border-radius: 6px; padding: 5px 10px; font-size: 12.5px; color: var(--ink-2); cursor: pointer; }
   .btn-ghost:hover { border-color: var(--line-strong); color: var(--ink); }
   .btn-ghost.warn { border-color: var(--active); color: var(--active); }
 
-  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
 </style>
 </head>
 <body>
 <div class="page">
   <header class="top">
     <div>
-      <p class="eyebrow">langGraph-learn · 2026-10-29 重排版</p>
+      <p class="eyebrow">langGraph-learn · 2026-10-29 重排版 · 逐日打卡</p>
       <h1>智能体研发 26 周</h1>
-      <p class="sub">Python · <b>LangGraph</b> 主线 · 对标大厂 JD · 工作日每天 2 小时 · 终点 2027-04-30 · 六个里程碑项目</p>
+      <p class="sub" id="sub">Python · <b>LangGraph</b> 主线 · 对标大厂 JD · 工作日每天 2 小时，周末和节假日不排 · M0、M1 已完成，M2 起逐日打卡</p>
     </div>
     <div class="save" id="save" data-mode="init"><span class="dot"></span><span id="saveText">Checkpoint · 载入中</span></div>
   </header>
 
   <section class="stats" id="stats" aria-label="进度概览"></section>
 
-  <section class="graph" aria-label="阶段状态图">
+  <section class="today" id="today" aria-label="今日任务"></section>
+
+  <section class="graph" aria-label="阶段状态图与打卡日历">
     <div class="graph-head">
       <h2>阶段状态图</h2>
-      <p>点一个节点查看该阶段；环形是该阶段清单的完成率，边线在前一阶段全部完成后变绿。</p>
+      <p>点一个节点查看该阶段。M2–M6 的环形是逐日任务完成率；阶段日期是计划日期，不随打卡变化。</p>
     </div>
     <div class="nodes" id="nodes"></div>
-    <div class="weeks">
-      <div class="weeks-head"><span id="weeksLeft">W0 → W26</span><span id="weeksRight"></span></div>
-      <div class="strip" id="strip" aria-label="26 周进度条"></div>
+    <div class="cal">
+      <div class="cal-head">
+        <h3>打卡日历</h3>
+        <p id="calNote">每格一天；点有任务的格子跳到那一天。</p>
+      </div>
+      <div class="cal-scroll"><div class="cal-grid" id="cal" aria-label="打卡日历"></div></div>
+      <div class="cal-legend" id="calLegend"></div>
     </div>
   </section>
 
-  <nav class="tabs" id="tabs" role="tablist" aria-label="阶段"></nav>
+  <nav class="tabs" id="tabs" role="tablist" aria-label="视图"></nav>
   <main class="panel" id="panel"></main>
 
   <footer class="foot">
-    <span class="sched">日程 2026-10-29 起 · 工作日每天 2 小时 · 逐日打卡见 docs/plan/</span>
+    <span class="sched" id="footSched">计划日期按 2026-10-29 起的工作日排定；预计日期随打卡滚动。</span>
     <span id="footNote">勾选即保存；同一账号在其他设备打开会同步。</span>
     <button class="btn-ghost" id="reset" type="button">重置全部进度</button>
   </footer>
@@ -306,43 +463,44 @@
 (function () {
   'use strict';
 
+  /* =========================== 日历 =========================== */
+  const START = '2026-10-29';
+  // 预设不排任务的工作日。2027 年官方放假安排以国务院公布为准，可在「节奏与原则 → 休息日与假期」里调整。
+  const HOLIDAY_GROUPS = [
+    ['元旦', ['2027-01-01']],
+    ['春节', ['2027-02-05', '2027-02-08', '2027-02-09', '2027-02-10', '2027-02-11', '2027-02-12']],
+    ['清明', ['2027-04-05']],
+    ['劳动节', ['2027-05-03', '2027-05-04', '2027-05-05']]
+  ];
+  const HOLIDAYS = {};
+  HOLIDAY_GROUPS.forEach(g => g[1].forEach(d => { HOLIDAYS[d] = g[0]; }));
+
   /* =========================== 数据 =========================== */
   // resources: [name, url, type, lang, note]; videos: [title, channel, url, lang, length, why]
+  // days: { id, t: 标题, k: [[分钟, 任务, 选做?]], ok: 完成标准, ref: 资料引用, gate: 验收日 }
+  // ref 写法：'m2.r0' = M2 第 1 条资料，'m2.v0' = M2 第 1 个视频，'x.key' = 下面 EXTRA 里的补充资料
+  const EXTRA = {
+    chunk: ['Chunking Strategies for LLM Applications（Pinecone）', 'https://www.pinecone.io/learn/chunking-strategies/', 'article', 'EN'],
+    mteb: ['MTEB 排行榜（含中文 C-MTEB）', 'https://huggingface.co/spaces/mteb/leaderboard', 'tool', 'EN'],
+    rerank: ['bge-reranker-v2-m3 模型卡', 'https://huggingface.co/BAAI/bge-reranker-v2-m3', 'tool', 'EN'],
+    milvusfts: ['Milvus 全文检索（内置 BM25）', 'https://milvus.io/docs/full-text-search.md', 'docs', 'EN'],
+    milvushybrid: ['Milvus 多向量混合检索', 'https://milvus.io/docs/multi-vector-search.md', 'docs', 'EN'],
+    ragasmetrics: ['Ragas 指标一览', 'https://docs.ragas.io/en/stable/concepts/metrics/available_metrics/', 'docs', 'EN'],
+    ctxret: ['Introducing Contextual Retrieval（Anthropic）', 'https://www.anthropic.com/news/contextual-retrieval', 'article', 'EN'],
+    llamamilvus: ['LlamaIndex + Milvus 示例', 'https://developers.llamaindex.ai/python/examples/vector_stores/milvusindexdemo/', 'docs', 'EN'],
+    timetravel: ['LangGraph 时间旅行', 'https://docs.langchain.com/oss/python/langgraph/use-time-travel', 'docs', 'EN'],
+    createagent: ['LangChain Agents（create_agent）', 'https://docs.langchain.com/oss/python/langchain/agents', 'docs', 'EN'],
+    middleware: ['LangChain Middleware', 'https://docs.langchain.com/oss/python/langchain/middleware', 'docs', 'EN'],
+    mcpadapters: ['langchain-mcp-adapters', 'https://github.com/langchain-ai/langchain-mcp-adapters', 'tool', 'EN'],
+    ccmcp: ['Claude Code 接入 MCP', 'https://code.claude.com/docs/en/mcp', 'docs', 'EN'],
+    kappa: ['scikit-learn：cohen_kappa_score', 'https://scikit-learn.org/stable/modules/generated/sklearn.metrics.cohen_kappa_score.html', 'docs', 'EN'],
+    gha: ['GitHub Actions 文档', 'https://docs.github.com/en/actions', 'docs', 'EN']
+  };
+
   const PLAN = {
-    start: '2026-10-29',
-    end: '2027-04-30',
-    // 日程表（2026-10-29 重排）：[周, 起, 止, 多数工作日所属阶段, 备注]；相邻两周首尾相接，假期并入前一周
-    weeks: [
-      [1, '2026-10-29', '2026-11-01', 'm1', ''],
-      [2, '2026-11-02', '2026-11-08', 'm1', ''],
-      [3, '2026-11-09', '2026-11-15', 'm1', ''],
-      [4, '2026-11-16', '2026-11-22', 'm2', ''],
-      [5, '2026-11-23', '2026-11-29', 'm2', ''],
-      [6, '2026-11-30', '2026-12-06', 'm2', ''],
-      [7, '2026-12-07', '2026-12-13', 'm2', ''],
-      [8, '2026-12-14', '2026-12-20', 'm3', ''],
-      [9, '2026-12-21', '2026-12-27', 'm3', ''],
-      [10, '2026-12-28', '2027-01-03', 'm3', '元旦 01-01 不排任务'],
-      [11, '2027-01-04', '2027-01-10', 'm3', ''],
-      [12, '2027-01-11', '2027-01-17', 'm4', 'M3 验收 01-12，M4 起步'],
-      [13, '2027-01-18', '2027-01-24', 'm4', ''],
-      [14, '2027-01-25', '2027-01-31', 'm4', ''],
-      [15, '2027-02-01', '2027-02-14', 'm4', '春节假期 02-05 – 02-12 不排任务'],
-      [16, '2027-02-15', '2027-02-21', 'm4', ''],
-      [17, '2027-02-22', '2027-02-28', 'm4', 'M4 验收 02-24，M5 起步'],
-      [18, '2027-03-01', '2027-03-07', 'm5', ''],
-      [19, '2027-03-08', '2027-03-14', 'm5', ''],
-      [20, '2027-03-15', '2027-03-21', 'm5', ''],
-      [21, '2027-03-22', '2027-03-28', 'm5', ''],
-      [22, '2027-03-29', '2027-04-05', 'm5', 'M5 验收 03-31；清明 04-05 不排任务'],
-      [23, '2027-04-06', '2027-04-11', 'm6', ''],
-      [24, '2027-04-12', '2027-04-18', 'm6', ''],
-      [25, '2027-04-19', '2027-04-25', 'm6', ''],
-      [26, '2027-04-26', '2027-04-30', 'm6', ''],
-    ],
     phases: [
       {
-        id: 'm0', code: 'M0', name: '准备周', short: '准备周', w0: 0, w1: 0, hours: 6, from: '2026-09-14', to: '2026-10-28',
+        id: 'm0', code: 'M0', name: '准备周', short: '准备周', hours: 6, from: '2026-09-07', to: '2026-09-13', closed: '2026-09-10',
         goal: '环境、仓库、模型 API、账号与规范就绪，从第一天起就按项目化方式工作。这一周不学新概念，只把后面 26 周要反复用的东西一次配好。',
         jd: [],
         topics: [
@@ -367,8 +525,8 @@
         videos: []
       },
       {
-        id: 'm1', code: 'M1', name: '模型交互与高级 Prompt', short: '模型交互与 Prompt', w0: 1, w1: 3, hours: 24, hoursNote: '（收尾部分）', from: '2026-10-29', to: '2026-11-15', span: '10/29 – 11/13 · 12 个工作日', accept: '11/13',
-        note: '重排说明：流式输出与手写提示词评测骨架已完成；结构化输出、手写 tool-calling 循环、promptfoo ≥20 条、成本表还没做，排在 10/29 – 11/13，逐日任务见 docs/plan/。',
+        id: 'm1', code: 'M1', name: '模型交互与高级 Prompt', short: '模型交互与 Prompt', hours: 42, from: '2026-09-14', to: '2026-10-28', closed: '2026-10-29',
+        note: '10/29 按你的进度反馈标记为已完成。下面的清单保留，用来查漏补缺；没勾的项不影响逐日计划。',
         goal: '不靠任何框架，把 LLM 应用最底层的四件事跑通：对话与流式、结构化输出、工具调用循环、Prompt 的版本化与评测。这一层理解得越透，后面用框架时越知道它在替你做什么。',
         jd: ['Prompt 工程（高级）', 'Agent 开发（基础）'],
         topics: [
@@ -418,7 +576,7 @@
         ]
       },
       {
-        id: 'm2', code: 'M2', name: 'RAG 与向量检索', short: 'RAG 与向量检索', w0: 4, w1: 7, hours: 40, from: '2026-11-16', to: '2026-12-13', span: '11/16 – 12/11 · 20 个工作日', accept: '12/11',
+        id: 'm2', code: 'M2', name: 'RAG 与向量检索', short: 'RAG 与向量检索',
         goal: '搭出一条可评测的生产级 RAG 管线，Milvus 与 Elasticsearch 都上手，并用指标说明每个优化点的收益。JD 里"几乎全部"都要它。',
         jd: ['RAG / 向量检索（必备）', '评测（入门）', '框架（LlamaIndex）'],
         topics: [
@@ -467,11 +625,120 @@
           ['Get Started with Milvus building a RAG App', 'Zilliz', 'https://www.youtube.com/watch?v=TcWnbaiczGo', 'EN', '~30m', 'Milvus 官方 RAG 快速上手'],
           ['Building and Evaluating Advanced RAG（中英字幕）', 'DeepLearning.AI 课程转载', 'https://www.youtube.com/playlist?list=PLbd7ntv6PxC3r-z9JHaPAf_yfa017QtpA', 'EN', '播放列表', '高级 RAG 课程视频，带中英字幕'],
           ['大模型 RAG 与 Agent 智能体项目实战（LangChain）', '黑马程序员 · B站', 'https://www.bilibili.com/video/BV1yjz5BLEoY/', 'ZH', '15h31m / 67P', '系统课，挑 RAG 章节看即可']
+        ],
+        days: [
+          { id: 'm2-01', t: 'P2 立项：RAG 全流程与语料', k: [
+            [20, '看《RAG 工作机制详解》（17 分钟），画出 入库 → 检索 → 重排 → 生成 → 引用 五段，每段写一句它最可能出什么错'],
+            [30, '选语料下载到 `data/p2/raw/`（加进 .gitignore）：推荐 docs.langchain.com 的 Markdown 源码（GitHub 上的 langchain-ai/docs），只取 LangGraph / LangChain 的 Python 部分，≥200 页，P3 会直接复用；统计页数与总字数'],
+            [50, '写 P2 spec `docs/specs/2026-10-29-p2-企业知识库问答.md`：典型用户与问题、语料范围、题型（事实 / 多片段综合 / 对比 / 无答案）、指标与门槛（faithfulness ≥0.85）、实验矩阵（向量 / BM25 / 混合 / +Rerank / 分块）、明确不做什么'],
+            [20, '建骨架 `src/p2-rag/`（loader / chunking / embed / retrieve / generate 五个模块 + README 一段话）和 `evals/p2-rag/`，提交'],
+            [15, '`cd docker && docker compose up -d`，跑 `docker/smoke_test.py`，提前确认 Milvus 和 ES 能起', 1]
+          ], ok: 'spec 已提交；`data/p2/raw/` 有语料并记下页数与字数；骨架已提交', ref: ['m2.v0', 'm2.r3'] },
+          { id: 'm2-02', t: '加载清洗 + 固定窗口分块', k: [
+            [20, '读 Pinecone 的分块策略综述，记 3 行：块大小、overlap、按结构切分各自影响什么'],
+            [45, '`loader.py`：读 Markdown / MDX，去掉 front-matter、import 语句和组件标签，保留标题层级与代码块，输出 `Doc(source, title, text)` 列表'],
+            [35, '`chunking.py` 第 1 种：固定窗口 + overlap（按 token 计，用 tiktoken 或按字符数近似），全语料跑一遍'],
+            [20, '输出统计（chunk 数、长度均值 / P95 / 最大），随机抽 5 个 chunk 看有没有切断代码块或表格，记进 `docs/notes/p2-observations.md`']
+          ], ok: '运行后能打印分块统计表；抽查记录已写', ref: ['x.chunk'] },
+          { id: 'm2-03', t: '分块：递归切分 + 按标题切分', k: [
+            [45, '实现递归切分：段落 → 句子 → 字符逐级回退，保证不超过长度上限'],
+            [50, '实现按 Markdown 标题切分：每个 chunk 带 `heading_path`（如 Persistence › Checkpointer）作为 metadata；过长的小节再递归细分，代码块不拆开'],
+            [25, '三种分块器的统计放进同一张表，每种抽 3 个 chunk 比较可读性，写 3 行结论']
+          ], ok: '三种分块器都能跑完全语料；对比表和 3 行结论已记录' },
+          { id: 'm2-04', t: 'Embedding 选型与缓存', k: [
+            [30, '读 bge-m3 与 Qwen3-Embedding 模型卡，对照 MTEB 榜单；在「本地跑（sentence-transformers / FlagEmbedding）」和「调 API」之间二选一，写下理由、维度、最大长度、成本'],
+            [60, '`embed.py`：批量 embedding + 磁盘缓存（key = 模型名 + chunk 内容哈希）+ 失败重试；先对「按标题切分」的全语料跑完'],
+            [30, '记录耗时、费用、维度；挑 5 对相关、5 对无关的句子算余弦相似度，看两组分数是否拉得开']
+          ], ok: '全语料 embedding 已缓存，第二次运行几乎零耗时；相似度抽查已记录', ref: ['m2.r6', 'm2.r7', 'x.mteb'] },
+          { id: 'm2-05', t: 'Milvus：建库、HNSW 索引、入库', k: [
+            [15, '`docker compose up -d` 后跑 `docker/smoke_test.py`，确认 Milvus 是 healthy'],
+            [30, '读 Milvus Quickstart 与索引类型（FLAT / IVF / HNSW），写 3 行：这个规模为什么选 HNSW，M、efConstruction、ef 各影响什么'],
+            [60, '`milvus_store.py`：schema（id / vector / text / source / heading_path / chunker）、HNSW 索引、批量插入、`search(query, k)` 返回分数与来源（注意一致性级别，见 docker/README）'],
+            [15, '用 5 个真实问题试搜，看 top-5 的来源靠不靠谱，记下直觉判断'],
+            [30, '看 Zilliz 的 Milvus RAG 入门视频，对照自己的实现', 1]
+          ], ok: '任意问题能打印 top-5 的分数、来源和 heading_path', ref: ['m2.r0', 'm2.v1'] },
+          { id: 'm2-06', t: '评测先行：评测集 v0（20 条）', k: [
+            [20, '读 Ragas 文档中评测数据集的部分，定字段：question / reference_answer / reference_contexts（来源 + 标题路径 + 原文片段）'],
+            [70, '写 20 条到 `evals/p2-rag/dataset.jsonl`：可以让模型基于你挑的 chunk 起草，你逐条审改。题型：事实 ≥8、多片段综合 ≥4、对比 ≥3、语料里没有答案 ≥3；中文提问、保留英文术语'],
+            [30, '自检：抽 5 条自己去语料里找答案，修掉坏题和有歧义的题']
+          ], ok: '`dataset.jsonl` 有 20 条，题型分布达标，抽检的 5 条都通过', ref: ['m2.r3'] },
+          { id: 'm2-07', t: '召回指标脚本 + 向量 baseline', k: [
+            [60, '`evals/p2-rag/recall.py`：每题取 top-k，算 hit@k、recall@k、MRR；参考片段的匹配规则（来源 + 文本重叠率）写在脚本开头'],
+            [30, '跑 Milvus 纯向量 baseline（k = 5 / 10），写进 `evals/p2-rag/results.md` 第一行，注明分块器、embedding 模型、日期'],
+            [30, '挑 3 道没命中的题写原因假设（切坏了？术语不匹配？跨语言？），后面用实验验证']
+          ], ok: '`results.md` 有 baseline 一行和 3 条待验证的假设' },
+          { id: 'm2-08', t: 'Elasticsearch：BM25 与 kNN', k: [
+            [30, '读 ES 向量检索文档：dense_vector 映射、kNN 查询参数（k / num_candidates）；了解 BM25 的默认参数'],
+            [60, '`es_store.py`：建 index（text / source / heading_path / vector），复用 embedding 缓存入库；实现 `search_bm25(query, k)` 和 `search_knn(query, k)`'],
+            [30, '纯 BM25、ES-kNN 两组召回指标写进 `results.md`；ES-kNN 与 Milvus 向量结果差别大就先查索引参数'],
+            [30, '中文语料对照：取 20 页中文文档，比较 standard 与 ik / smartcn 分词下的 BM25 效果', 1]
+          ], ok: '`results.md` 新增 BM25、ES-kNN 两行', ref: ['m2.r1'] },
+          { id: 'm2-09', t: '混合检索（上）：RRF 与 ES 混合', k: [
+            [30, '读 ES 混合检索文档，弄懂 RRF 公式 1/(k + rank)，以及 rank_constant、rank_window_size 的作用'],
+            [50, '先在应用层自己写 `rrf_fuse(lists, k=60)`（约 20 行）融合 BM25 与 kNN；再试 ES 自带的 rrf retriever，当前 license 不支持就记录现象，用自己的版本'],
+            [40, '跑混合召回指标写进 `results.md`，按题型看哪类提升最多，写 3 行结论']
+          ], ok: '`results.md` 有「混合（RRF）」一行和 3 行结论', ref: ['m2.r2'] },
+          { id: 'm2-10', t: '混合检索（下）：Milvus 稀疏 + 稠密，对比表 v1', k: [
+            [50, 'Milvus 侧混合：用内置 BM25 全文检索（Function + 稀疏向量）或 bge-m3 的 sparse 输出，与 dense 做 `hybrid_search` + RRFRanker'],
+            [40, '整理对比表 v1：向量（Milvus）/ 向量（ES）/ BM25 / 混合（ES）/ 混合（Milvus） × hit@5、recall@10、MRR、P50 延迟'],
+            [30, '写 5 行结论：哪类题混合赢、哪类 BM25 赢；两个库在部署、API、混合检索便利度上的差异']
+          ], ok: '对比表 v1 齐全，每条结论都有数字', ref: ['x.milvusfts', 'x.milvushybrid'] },
+          { id: 'm2-11', t: 'Rerank：接入与收益', k: [
+            [20, '读 bge-reranker-v2-m3 模型卡，写 3 行：cross-encoder 与 bi-encoder 的区别、为什么只对 top-N 重排'],
+            [60, '`rerank.py`：对混合召回的 top-50 重排取 top-5（本地 FlagEmbedding / CrossEncoder 或 API 二选一），记录单次延迟'],
+            [40, '候选数 20 / 50 / 100 各跑一遍，记录 recall@5、MRR、延迟，找出最划算的候选数']
+          ], ok: '`results.md` 有 +Rerank 一行和「候选数 × 收益 × 延迟」小表', ref: ['x.rerank'] },
+          { id: 'm2-12', t: '生成：带引用的回答与拒答', k: [
+            [50, '`generate.py`：top-5 片段编号后注入 prompt，要求用 [1][2] 标注来源；输出 `{answer, citations: [{source, heading_path, snippet}]}`，用 Pydantic 校验'],
+            [30, '拒答：rerank 最高分低于阈值、或模型判断片段不足以回答时，回答「知识库中没有相关信息」；用评测集的无答案题验证'],
+            [20, '读 Lost in the Middle 的摘要与结论，定下片段拼接顺序（最相关的放首尾）'],
+            [20, 'CLI：`uv run src/p2-rag/ask.py "问题"` 打印答案与引用']
+          ], ok: '任意问题返回带引用的答案；无答案题全部拒答', ref: ['m2.r9'] },
+          { id: 'm2-13', t: '评测集扩到 50 条', k: [
+            [80, '补写 30 条到共 50 条（沿用题型比例），每条人工核对 reference_contexts 确实能支撑答案'],
+            [40, '用 50 条重跑召回对比表；结论如果翻转，写清原因']
+          ], ok: '`dataset.jsonl` 共 50 条；对比表已用 50 条重跑' },
+          { id: 'm2-14', t: 'Ragas 基线', k: [
+            [60, '按 Ragas 当前文档接入（judge 模型走你现有的网关），跑 faithfulness / answer relevancy / context precision / context recall，拿到第一份基线'],
+            [20, '记录这次评测的 judge 调用次数、token 与费用，M5 做 Judge 校准时要用'],
+            [40, '看 faithfulness 最低的 5 条，逐条归因：检索错 / 生成越界 / 参考答案有问题，写进 observations']
+          ], ok: 'Ragas 四个指标的基线数字 + 5 条失败归因', ref: ['m2.r3', 'x.ragasmetrics', 'm2.r8'] },
+          { id: 'm2-15', t: '分块消融实验', k: [
+            [20, '设计实验矩阵：chunk size {256, 512, 1024} × overlap {0, 15%}，其他变量固定，共 6 组'],
+            [70, '`ablation.py` 自动跑完 6 组（重建索引 → 召回评测），靠 embedding 缓存省钱'],
+            [30, '分析结果，定下最终配置并写理由；用它重建 Milvus 与 ES 索引']
+          ], ok: '6 组结果入表；最终配置与理由已写' },
+          { id: 'm2-16', t: '高级检索：Contextual Retrieval 或 parent-document', k: [
+            [30, '读 Anthropic《Contextual Retrieval》，再了解 parent-document（小块检索、大块喂模型）的思路，各写 3 行适用场景'],
+            [60, '二选一实现：给每个 chunk 生成一句上下文前缀后重建 embedding 与 BM25，或者做 parent-document 检索'],
+            [30, '在 50 条上跑召回与 Ragas，写结论：在你的语料上值不值得，用数字说话'],
+            [30, 'query rewriting 或 HyDE 再试一个，对比结果', 1]
+          ], ok: '高级检索有评测数字和「值不值得」的结论', ref: ['x.ctxret', 'm2.r5', 'm2.v2'] },
+          { id: 'm2-17', t: '冲 faithfulness ≥0.85', k: [
+            [60, '针对低分题逐项调：prompt（只依据片段作答、证据不足就说不知道）、top-k、拼接顺序、拒答阈值'],
+            [40, '每改一项重跑 Ragas，一行记一个改动和前后数字'],
+            [20, '没到 0.85 就如实写差距和下一步，不改评测集凑数']
+          ], ok: '优化记录表已写；faithfulness 达标，或差距已如实记录' },
+          { id: 'm2-18', t: 'LlamaIndex 版', k: [
+            [30, '读 LlamaIndex 的 RAG 文档：Document / Node / Index / Retriever / QueryEngine 分别对应你手写的哪一块'],
+            [70, '用 LlamaIndex 实现同一流程（同语料、同 embedding、接 Milvus），跑同一评测集'],
+            [20, '记录代码行数、可定制的点、遇到的黑盒']
+          ], ok: 'LlamaIndex 版可运行，并有评测数字', ref: ['m2.r4', 'x.llamamilvus'] },
+          { id: 'm2-19', t: '对照表 + 评测报告 + README', k: [
+            [30, '手写 vs LlamaIndex 对照表：指标、代码量、可控性、调试体验、依赖重量，一句话结论'],
+            [60, '`evals/p2-rag/report.md`：每个优化点（混合 / Rerank / 分块 / 高级检索 / prompt）一行「recall +x% / faithfulness +y / 延迟 +z ms」'],
+            [30, 'P2 README：架构图（入库 → 检索 → 重排 → 生成 → 引用）、运行方式、Milvus 与 ES 的配置']
+          ], ok: '评测报告里每个优化点都有量化收益；照着 README 能跑通' },
+          { id: 'm2-20', t: 'M2 验收 · RAG 面试三问', gate: 1, k: [
+            [30, '笔记 `docs/notes/rag面试三问.md`：为什么召回了却答错 / 分块怎么定 / 什么时候用 GraphRAG，每问配你自己的实验数字'],
+            [30, '面试题库 RAG 主题：`docs/interview/02-rag.md` 写 10 题，每题记 2–3 个要点'],
+            [40, 'M2 验收：在 M2 标签页逐条勾「输出成果 · 验收」，不达标的写清差距'],
+            [20, '阶段复盘写进 journal：实际用了几天、最大的坑、M3 要提前准备什么']
+          ], ok: 'M2 DoD：Milvus 与 ES 各有可运行配置；混合 + Rerank 相对纯向量有量化提升；Ragas ≥50 条且 faithfulness ≥0.85；评测报告；三问笔记' }
         ]
       },
       {
-        id: 'm3', code: 'M3', name: 'LangGraph 与单 Agent 工程化', short: 'LangGraph 单 Agent', w0: 8, w1: 12, hours: 42, from: '2026-12-14', to: '2027-01-12', span: '12/14 – 01/12 · 21 个工作日', accept: '01/12',
-        note: '12-31 年末盘点；01-01 元旦不排任务。',
+        id: 'm3', code: 'M3', name: 'LangGraph 与单 Agent 工程化', short: 'LangGraph 单 Agent',
         goal: '把 LangGraph 学到源码级，做出一个带持久化、人工审批、长期记忆和完整 trace 的生产形态 Agent。状态机是你的老本行，这个月应该是最顺的一个月。',
         jd: ['Agent 开发（Tool-Use、Memory 管理）', '框架（LangGraph、LangChain）'],
         topics: [
@@ -521,11 +788,124 @@
           ['Introduction to Deep Agents（课程导览）', 'LangChain', 'https://www.youtube.com/watch?v=z30BJFWe89c', 'EN', '~10m', '规划、子 Agent、文件系统三件套'],
           ['尚硅谷 LangGraph 教程：入门到智能体项目实战', '尚硅谷 · B站', 'https://www.bilibili.com/video/BV1z3NY66EY1/', 'ZH', '21h16m / 132P', '最系统的中文 LangGraph 课，按需跳章'],
           ['2026 最新版 LangChain + LangGraph 开发实战（含 LangSmith）', '黑马程序员 · B站', 'https://www.bilibili.com/video/BV178w1z7EHQ/', 'ZH', '7h18m / 28P', 'LangGraph + LangSmith 监控调试评估一体']
+        ],
+        days: [
+          { id: 'm3-01', t: 'LangGraph 入门：第一张图', k: [
+            [20, '读 LangGraph 概览；`uv add langgraph langchain-anthropic`，确认能通过你的网关（base_url）调通模型'],
+            [60, 'LangChain Academy《Introduction to LangGraph》Module 1：State / Node / Edge / 条件边，跟着做出第一张图（模块编号以课程当前目录为准）'],
+            [40, '自己写一张 3 节点图（分类 → 分支 → 回答），在自己的网关上跑通并提交'],
+            [30, '看课程视频合集里 Module 1 对应的几集', 1]
+          ], ok: '自己写的 3 节点图能跑；依赖已锁进 uv.lock', ref: ['m3.r0', 'm3.r5', 'm3.v0'] },
+          { id: 'm3-02', t: 'State、Reducer 与 ReAct 图', k: [
+            [50, 'Academy Module 2：State schema（TypedDict / Pydantic）、reducer（add_messages）、消息过滤与裁剪'],
+            [50, '最小 ReAct 图：llm 节点 ⇄ ToolNode（tools_condition），挂 1 个工具'],
+            [20, '用 `graph.get_graph().draw_mermaid()` 导出图，贴进 P3 README 草稿']
+          ], ok: 'ReAct 图完成一次工具调用；mermaid 图已贴入', ref: ['m3.r5'] },
+          { id: 'm3-03', t: 'P3 立项 + 工具迁入图', k: [
+            [30, '写 P3 spec `docs/specs/…-p3-研发知识助手.md`：两类任务（知识问答 / 代码仓库操作）、工具与权限白名单、验收标准对照 M3 清单'],
+            [70, '`src/p3-dev-assistant/`：迁入或补齐 4 个工具（read_file / list_dir / run_cmd 白名单 / git_diff），可复用 M1 写的 `src/w3/tool_use.py`；文件访问限制在仓库根目录内（`Path.resolve()` 防 ../ 逃逸）'],
+            [20, '5 个攻击用例：读 /etc/passwd、rm -rf、../ 越界、用 ; 拼接命令、超大文件，确认全部被拦截或截断']
+          ], ok: 'spec 已提交；图里能调 4 个工具；5 个攻击用例全部被拦截' },
+          { id: 'm3-04', t: '用例回归 + 手写循环 vs 图', k: [
+            [50, '写 12 条多步工具调用用例 `evals/p3/cases.yaml`（输入、期望工具序列、答案关键词），用脚本批量跑出通过率'],
+            [40, '和 M1 手写的 tool loop 对比：代码行数、加一个工具要改几处、加人工审批的难度、可观测性、调试体验'],
+            [30, '修失败用例（工具描述 / system prompt），记下改了什么、通过率怎么变']
+          ], ok: '用例通过率有数字；对比表已写' },
+          { id: 'm3-05', t: 'Command / Send / Subgraph', k: [
+            [60, '读 Command、Send、Subgraph 文档，各写一个不超过 20 行的 demo：节点内路由、并行 map、子图嵌套'],
+            [40, 'Academy Module 4 里并行、子图、map-reduce 的几课'],
+            [20, '3 行笔记：三者分别解决什么问题，什么时候用条件边就够了']
+          ], ok: '三个 demo 都能运行', ref: ['m3.r5'] },
+          { id: 'm3-06', t: '子图与条件边：commit message 子流程', k: [
+            [60, '把「git diff → commit message（结构化输出 + 校验重试）」做成子图，嵌进主图'],
+            [40, '主图加条件边：意图是「写提交信息」走子图，「问代码」走工具循环'],
+            [20, '两条路径各跑 3 次，确认路由正确']
+          ], ok: '主图含 ≥1 个子图、≥1 条条件边，两条路径都能触发' },
+          { id: 'm3-07', t: 'Checkpointer：会话持久化', k: [
+            [30, '读持久化文档：thread / checkpoint / state snapshot 三个概念'],
+            [60, '接入 SqliteSaver（落盘到 `data/p3/checkpoints.sqlite`），同一 thread_id 多轮对话保持记忆'],
+            [30, '用 get_state / get_state_history 打印一个会话的全部 checkpoint，读懂每个里存了什么']
+          ], ok: '同一 thread 第二次提问记得第一次的内容；能打印 checkpoint 历史', ref: ['m3.r1'] },
+          { id: 'm3-08', t: '重启恢复与幂等', k: [
+            [50, '写演示脚本：聊 2 轮 → 杀进程 → 重启后用同一 thread_id 继续，验证它还记得'],
+            [40, '在工具执行中途强杀进程，重启后观察从哪个节点恢复（durable execution 的真实表现）'],
+            [30, '5 行笔记：恢复时哪些副作用会重复执行，工具该怎么设计才幂等']
+          ], ok: '「聊 → 杀 → 重启 → 继续」可重复演示；幂等笔记已写', ref: ['m3.r1'] },
+          { id: 'm3-09', t: '时间旅行：回放与分叉', k: [
+            [30, '读时间旅行文档：回放（replay）与分叉（fork）'],
+            [60, '列出历史 checkpoint → 选一个 → update_state 改某个值 → 从该点重跑，得到分叉结果'],
+            [30, '把终端输出整理成 `docs/notes/p3-time-travel-demo.md`，作为「回退重跑」的演示证据']
+          ], ok: '演示文档里有「原结果 vs 分叉结果」对照', ref: ['x.timetravel'] },
+          { id: 'm3-10', t: 'interrupt：写操作人工审批', k: [
+            [25, '读 Interrupts 文档：`interrupt()`、`Command(resume=…)`，以及恢复时节点会从头重跑这一点'],
+            [60, '给写文件、git commit 这类工具加 interrupt：展示将要执行的操作，等待 approve / reject / edit'],
+            [15, 'CLI 交互：y / n / 编辑参数'],
+            [20, 'Academy Module 3（Human-in-the-loop）快速过一遍，对照你的实现']
+          ], ok: '写操作前一定停下来等确认；拒绝后不执行', ref: ['m3.r2', 'm3.r5'] },
+          { id: 'm3-11', t: '审批边界用例 + pytest', k: [
+            [50, '测边界：拒绝后 Agent 怎么反应；审批人改了参数；同一节点多个 interrupt；审批期间进程重启能否恢复'],
+            [50, '写 3 条 pytest：approve / reject / 重启后恢复审批'],
+            [20, '把发现的问题写进 P3 README 的「已知限制」']
+          ], ok: '3 条 pytest 通过' },
+          { id: 'm3-12', t: 'Store：长期记忆', k: [
+            [25, '读 Memory 文档：短期记忆（thread 内）与长期记忆（跨 thread 的 Store），namespace 怎么设计'],
+            [55, '接入 Store（先 InMemoryStore 跑通，再换持久化实现），按 ("user", user_id, "preferences") 存取'],
+            [20, '写 put / get / search 三个小测试'],
+            [20, 'Academy Module 5（长期记忆）快速过一遍']
+          ], ok: '3 个测试通过；进程重启后偏好还在', ref: ['m3.r3', 'm3.r5'] },
+          { id: 'm3-13', t: '用户偏好记忆节点', k: [
+            [70, 'memory 节点：从对话里抽取偏好（如「commit message 用中文」「不要改 tests/」）写入 Store；每次对话开始时读出来注入 system prompt'],
+            [30, '开一个新 thread，验证偏好依然生效'],
+            [20, '支持「忘掉我的偏好」，删除对应条目']
+          ], ok: '新 thread 里偏好生效，并且能被删除' },
+          { id: 'm3-14', t: 'Streaming：实时进度', k: [
+            [30, '读 Streaming 文档：updates / values / messages / custom 四种模式的区别'],
+            [60, 'CLI 用 messages 模式流式输出回答，用 updates 显示节点进度（→ 正在执行 read_file）'],
+            [30, '用 custom 模式从工具里推送自定义进度事件']
+          ], ok: 'CLI 实时显示回答与节点进度', ref: ['m3.r4'] },
+          { id: 'm3-15', t: '接入 P2：检索子图', k: [
+            [70, '把 P2 的「检索 → 重排 → 生成」封装成子图（输入 question，输出 answer + citations），挂进 P3 主图'],
+            [30, '跑 5 个知识问答 + 5 个代码问答，确认都走了正确的分支'],
+            [20, '再把检索包成一个 tool，用 3 行对比「子图编排」和「工具调用」两种接法']
+          ], ok: 'P3 同时能回答知识问题和代码问题' },
+          { id: 'm3-16', t: '路由：Workflow 还是 Agent', k: [
+            [60, '入口加路由节点：知识问答 / 代码操作 / 闲聊；规则 + 小模型分类，写 15 条路由用例测准确率'],
+            [30, '同一批 10 个任务，对比「全交给 Agent 自选工具」和「显式路由」的 token、延迟、正确率'],
+            [30, '用《Building Effective Agents》的判断框架写 5 行结论：这个场景该用 Workflow 还是 Agent']
+          ], ok: '路由准确率有数字；对比表已写', ref: ['m1.r0'] },
+          { id: 'm3-17', t: 'LangSmith 可观测', k: [
+            [20, '配置 LANGSMITH_API_KEY 和 tracing 相关的环境变量'],
+            [50, 'Academy《LangSmith Essentials》：trace / run / metadata / tags'],
+            [50, '给 P3 全链路开 tracing，跑 10 个任务，在界面里看每个节点的输入输出、token、延迟']
+          ], ok: 'LangSmith 上能看到 P3 的完整 trace', ref: ['m3.r7', 'm3.r8'] },
+          { id: 'm3-18', t: '指标出数字：token 与 P95', k: [
+            [60, '用 LangSmith SDK 拉取 trace，脚本算出每次对话的平均 token、P50 / P95 延迟、各节点占比'],
+            [40, '找最慢或最贵的节点做 1 个优化（精简工具描述、裁剪历史或并行调用），复测'],
+            [20, '把「优化前 → 后」的数字写进 P3 README']
+          ], ok: 'README 有平均 token、P95 延迟和一次优化的前后对比', ref: ['m3.r8'] },
+          { id: 'm3-19', t: '1.x 工程特性 + create_agent', k: [
+            [30, '读 LangGraph 1.x 的变更：per-node 超时与错误处理、RetryPolicy、优雅停机、Delta Channel（以官方 changelog 当前版本为准）'],
+            [40, '给工具节点加超时、RetryPolicy 和错误处理，写一个故意超时、一个故意抛错的工具来验证'],
+            [50, '读 create_agent 与 middleware 文档，看 Deep Agents 课程导览；写 5 行：它们和你手搭的图是什么关系、什么时候用哪个'],
+            [30, 'Academy Module 6（部署）过一遍，整门课收尾', 1]
+          ], ok: '超时与重试在测试里生效；5 行对比已写', ref: ['x.createagent', 'x.middleware', 'm3.v1'] },
+          { id: 'm3-20', t: '读 Pregel 源码', k: [
+            [20, 'clone langgraph 仓库，浏览 `libs/langgraph/langgraph/pregel/` 的目录结构'],
+            [70, '追主流程 Pregel.invoke → stream → 主循环，画出一个 superstep 的 plan → execute → update'],
+            [30, '读 channel 类型（LastValue / BinaryOperatorAggregate / Topic）与 reducer 的关系；记 3 个疑问，试着在源码里找答案']
+          ], ok: '有一张 superstep 流程图（mermaid）；3 个疑问有记录', ref: ['m3.r9'] },
+          { id: 'm3-21', t: 'M3 验收 · 执行模型笔记', gate: 1, k: [
+            [40, '笔记 `docs/notes/langgraph执行模型.md`：superstep / channel / checkpoint 的关系，附图（按公开发布的标准写）'],
+            [20, 'P3 README 定稿：图结构示意、运行方式、指标'],
+            [20, '面试题库 LangGraph 主题：`docs/interview/03-langgraph.md` 写 10 题'],
+            [25, 'M3 验收：在 M3 标签页逐条勾「输出成果 · 验收」'],
+            [15, '阶段复盘写进 journal']
+          ], ok: 'M3 DoD：子图 + 条件边 + interrupt；重启可恢复并能回退重跑；LangSmith 全链路 trace 与 P95；能讲清 superstep / channel 与 create_agent 的关系' }
         ]
       },
       {
-        id: 'm4', code: 'M4', name: '多 Agent 编排 + MCP / Skills 生态', short: '多 Agent + MCP', w0: 12, w1: 17, hours: 50, from: '2027-01-13', to: '2027-02-24', span: '01/13 – 02/24 · 25 个工作日', accept: '02/24',
-        note: '中间含春节假期（02-05 – 02-12，不排任务）；02-04 设春节前里程碑，02-15 节后重启。',
+        id: 'm4', code: 'M4', name: '多 Agent 编排 + MCP / Skills 生态', short: '多 Agent + MCP',
+        note: '简历 v1 在本阶段验收日完成，春节前就能开始投递。',
         goal: '做出 JD 原文描述的那种系统：通过 MCP 打通 CRM / ERP / OA，由多 Agent 协作完成跨系统任务。这是 2026 年 JD 相对 2025 年最明显的新增项，所以给了 5 周。',
         jd: ['Agent 开发与多智能体编排（必备）', 'MCP / Skills / Connector 生态（新兴 · 高频）'],
         topics: [
@@ -581,11 +961,135 @@
           ['Multi-agent swarms with LangGraph', 'LangChain', 'https://www.youtube.com/watch?v=JeyDrn1dSUQ', 'EN', '~15m', '官方 handoff 模式演示'],
           ['Claude Agent Skills Explained', 'Anthropic', 'https://www.youtube.com/watch?v=fOxC44g8vig', 'EN', '~5m', 'Skills 概念官方短片'],
           ['Agent Skills 详细攻略，一期视频精通', '技术爬爬虾 · B站', 'https://www.bilibili.com/video/BV1HuiyBQE9G/', 'ZH', '15m', 'Skills 用法与编写攻略']
+        ],
+        days: [
+          { id: 'm4-01', t: 'P4 立项 + 多 Agent 模式', k: [
+            [40, '读 Anthropic《How we built our multi-agent research system》和 LangChain 多 Agent 总览，分清 Supervisor / Subagents / Handoffs / Router'],
+            [40, '写 P4 spec：3 个子 Agent、3 个 MCP 服务的工具清单、跨系统任务样例（如「给上季度前三大客户安排回访并预提差旅报销」）、验收标准'],
+            [40, '写一页「何时不该用多 Agent」：上下文碎片化、成本翻倍；预判 P4 里哪部分用 Workflow 就够']
+          ], ok: 'spec 与一页纸都已提交', ref: ['m4.r6', 'm4.r0'] },
+          { id: 'm4-02', t: 'MCP 规范 2026-07-28', k: [
+            [20, '看《MCP 终极指南》（27 分钟）补直觉'],
+            [60, '读规范主线：无状态核心、多轮往返请求（MRTR）、Header 路由、可缓存 list、授权加固（CIMD、RFC 9207）、Tasks 扩展'],
+            [40, '对照 2025-11 版做一张「变了什么 / 为什么这样改」的表，至少 6 行']
+          ], ok: '对比表至少 6 行，每行都写了「为什么」', ref: ['m4.v1', 'm4.r7'] },
+          { id: 'm4-03', t: 'MCP Python SDK：第一个 Server', k: [
+            [30, '读 MCP Python SDK 的 README：tools / resources / prompts 三类原语，stdio 与 Streamable HTTP 两种传输'],
+            [60, '写最小 MCP Server：1 个 tool、1 个 resource、1 个 prompt，stdio 传输'],
+            [30, '用 MCP Inspector 连上并逐个调用，截图或记录'],
+            [30, '开始 Anthropic Academy《Introduction to MCP》', 1]
+          ], ok: 'Inspector 里能列出并调用 tool / resource / prompt', ref: ['m4.r9', 'm4.r10', 'm4.r11'] },
+          { id: 'm4-04', t: 'Mock CRM 服务', k: [
+            [70, '`src/p4-office-agents/crm/`：FastAPI + SQLite，表 customers / orders / contacts；种子脚本生成 ≥30 个客户、≥200 笔订单，可按季度汇总'],
+            [30, '6 个 REST 接口 + pytest 冒烟测试'],
+            [20, 'Anthropic Academy《Introduction to MCP》第一部分']
+          ], ok: 'CRM 服务起得来，冒烟测试通过', ref: ['m4.r11'] },
+          { id: 'm4-05', t: 'CRM MCP Server', k: [
+            [70, '把 CRM 包成 MCP Server：tools（search_customer、top_customers_by_revenue(quarter)、get_contact…）+ resources（crm://customers/{id}）'],
+            [30, '读《Writing effective tools for agents》，按文章改写工具描述和参数说明'],
+            [20, '用 Inspector 逐个工具验证']
+          ], ok: 'CRM MCP Server 通过 Inspector；工具描述按文章改写过一轮', ref: ['m5.r7', 'm4.r10'] },
+          { id: 'm4-06', t: 'Mock ERP（报销）+ MCP Server', k: [
+            [60, 'ERP 服务：报销单、预算、审批状态；FastAPI + SQLite + 种子数据'],
+            [60, 'ERP MCP Server：create_expense_draft、get_budget、submit_expense（写操作，后面要加人工确认）']
+          ], ok: 'ERP MCP Server 通过 Inspector' },
+          { id: 'm4-07', t: 'Mock OA（日程）+ MCP Server', k: [
+            [50, 'OA 服务：日程、会议室、员工空闲时间'],
+            [50, 'OA MCP Server：find_free_slots、create_event，外加日历 resource'],
+            [20, '三个 Server 都在 Inspector 里列出工具并调用成功']
+          ], ok: '3 个 MCP Server 全部通过 Inspector' },
+          { id: 'm4-08', t: 'MRTR：工具中途向用户要参数', k: [
+            [30, '读规范里 MRTR 的段落：工具怎么表达「需要输入」，客户端怎么回应'],
+            [60, '在 ERP 的 create_expense_draft 上实现：缺出差事由或金额时向用户追问，而不是报错；SDK 还不支持就先用 elicitation 落地，并记录差距'],
+            [30, '用 Inspector 或自写的 client 验证追问流程']
+          ], ok: '缺参数时工具会追问，补全后成功创建草稿', ref: ['m4.r7'] },
+          { id: 'm4-09', t: '授权与 Streamable HTTP', k: [
+            [40, '读规范的授权章节，写 5 行笔记：OAuth、CIMD、RFC 9207 各自在防什么'],
+            [60, 'CRM Server 从 stdio 切到 Streamable HTTP，加最简单的 Bearer token 校验'],
+            [20, 'Inspector 通过 HTTP 连接；验证不带 token 会被拒绝']
+          ], ok: 'HTTP 传输可用；不带 token 被拒绝', ref: ['m4.r7'] },
+          { id: 'm4-10', t: '客户端互操作', k: [
+            [50, '把 3 个 Server 配进 Claude Code（`claude mcp add …`），让它完成「查询上季度前三大客户」'],
+            [40, '在另一个支持 MCP 的客户端（Claude Desktop / Cursor / VS Code 任选）再验证一次，记录配置方式、工具展示、MRTR 支持度的差异'],
+            [30, '改掉被模型误解的工具描述，至少 3 处']
+          ], ok: '两个客户端都能完成查询；3 处描述修改有记录', ref: ['x.ccmcp'] },
+          { id: 'm4-11', t: 'MCP client 接入 LangGraph', k: [
+            [30, '读 langchain-mcp-adapters 的文档'],
+            [70, '把 3 个 Server 的 tools 转成 LangGraph 工具，单 Agent 先跑通「查客户」'],
+            [20, '记录 3 个 Server 的工具定义一共占多少 token（M5 做上下文工程要用这个数）']
+          ], ok: 'LangGraph 里的 Agent 通过 MCP 完成一次 CRM 查询；工具 token 数已记录', ref: ['x.mcpadapters'] },
+          { id: 'm4-12', t: '单 Agent 基线', k: [
+            [30, '写 10 个跨系统任务（带期望结果）到 `evals/p4-office-agents/tasks.yaml`'],
+            [40, '单 Agent 挂全部约 15 个工具跑这 10 个任务，记录成功率、token、延迟'],
+            [30, '分析失败原因：选错工具、参数错，还是上下文太长'],
+            [20, '结果写进 `evals/p4-office-agents/baseline.md`']
+          ], ok: 'baseline.md 有成功率 / token / 延迟三个数字和失败归因' },
+          { id: 'm4-13', t: 'Supervisor（上）：三个子 Agent', k: [
+            [30, '读 LangGraph Supervisor 教程和 langgraph-supervisor 的 README'],
+            [70, '实现 3 个子 Agent（销售查询 / 报销审批 / 日程协调），各自只挂本系统的工具'],
+            [20, '每个子 Agent 各跑 2 个本领域任务']
+          ], ok: '3 个子 Agent 都能独立完成本领域任务', ref: ['m4.r1', 'm4.r4'] },
+          { id: 'm4-14', t: 'Supervisor（中）：编排', k: [
+            [70, '用 supervisor 把 3 个子 Agent 串起来'],
+            [30, '对照文档和源码说清它替你做了什么：路由、handoff 工具、消息裁剪'],
+            [20, '跑通 1 个跨系统任务']
+          ], ok: 'Supervisor 能把任务分派给正确的子 Agent 并汇总结果', ref: ['m4.r2'] },
+          { id: 'm4-15', t: '报销人工确认 + 端到端', k: [
+            [60, '报销提交前用 interrupt 等人工确认（复用 M3 的审批模式）；弄清子 Agent 里的 interrupt 怎么冒泡到主图'],
+            [40, '端到端跑通「给上季度前三大客户安排回访并预提差旅报销」'],
+            [20, '在 LangSmith 看 trace，确认路径合理']
+          ], ok: '跨系统任务端到端跑通，报销提交前会等待确认' },
+          { id: 'm4-16', t: '并行（Send）+ 单 Agent 对比', k: [
+            [60, '用 Send 给前三大客户并行安排回访（map-reduce），和串行比延迟'],
+            [60, '10 个跨系统任务：单 Agent 基线 vs Supervisor 的成功率、token、延迟写进同一张表']
+          ], ok: '有串行 vs 并行的延迟数字，以及单 Agent vs Supervisor 对比表' },
+          { id: 'm4-17', t: 'Swarm / Handoff（上）', k: [
+            [40, '读 Handoffs 文档和 langgraph-swarm，看官方的 swarm 演示视频'],
+            [80, '在两个子 Agent 之间实现 handoff（销售查询 → 日程协调）']
+          ], ok: '两个 Agent 之间 handoff 成功一次', ref: ['m4.r3', 'm4.r5', 'm4.v2'] },
+          { id: 'm4-18', t: 'Swarm（下）：完整实现', k: [
+            [80, '用 Swarm 模式实现同样的 3 个子 Agent：没有中心路由，Agent 之间直接 handoff'],
+            [40, '跑跨系统任务，观察 handoff 路径是否合理、有没有死循环；加 handoff 次数上限']
+          ], ok: 'Swarm 版能完成跨系统任务；有 handoff 次数上限保护' },
+          { id: 'm4-19', t: 'Supervisor vs Swarm 对比', k: [
+            [70, '同一批 10 个任务，两种编排各跑 3 次取均值：成功率、token、延迟、失败模式'],
+            [50, '写 `evals/p4-office-agents/supervisor-vs-swarm.md`：什么场景选哪个、为什么，带数字']
+          ], ok: '对比表与结论已写，每条结论都有数字' },
+          { id: 'm4-20', t: 'Agent Skills（上）：规范与 Skill #1', k: [
+            [30, '读 Agent Skills 规范（SKILL.md frontmatter、目录约定、渐进式加载），看官方 5 分钟短片'],
+            [20, '看 anthropics/skills 里 2 个 Skill 的结构'],
+            [70, '写 Skill #1「周报生成」：SKILL.md + scripts/（汇总一周日程与客户跟进）+ references/']
+          ], ok: 'Skill #1 的目录结构符合规范，本地能触发', ref: ['m4.r13', 'm4.r15', 'm4.v3'] },
+          { id: 'm4-21', t: 'Agent Skills（下）：Skill #2 与触发率', k: [
+            [50, 'Skill #2「合同要点提取」：SKILL.md + 示例合同 + 提取脚本'],
+            [50, '在 Claude Code 加载两个 Skill 并触发；照仓库里 `evals/claude-code/skill-trigger.yaml` 的做法测触发率'],
+            [20, '改 description 提高触发率，复测']
+          ], ok: '两个 Skill 都能被正确触发，触发率有数字', ref: ['m4.r14', 'm4.v4'] },
+          { id: 'm4-22', t: 'Skills 跨客户端 + A2A + MCP 课程', k: [
+            [40, '在第二个支持 Skills 的客户端加载并验证，记录差异'],
+            [30, '读 A2A 协议概览，写 5 行：它和 MCP 怎么分工'],
+            [50, '补完 Anthropic Academy 两门 MCP 课（Introduction / Advanced Topics）剩下的部分']
+          ], ok: '两个客户端都加载过 Skill；两门 MCP 课完成', ref: ['m4.r16', 'm4.r11', 'm4.r12'] },
+          { id: 'm4-23', t: 'P4 README + 演示录制', k: [
+            [50, 'P4 README + 架构图（Supervisor + 3 个 MCP Server + 2 个 Skill）'],
+            [40, '修 bug、优化工具描述、补未完成项'],
+            [30, '录 P4 演示（终端录屏或 GIF），简历和面试要用']
+          ], ok: 'README 已写；演示已录好' },
+          { id: 'm4-24', t: '笔记：MCP 2026 无状态化解读', k: [
+            [80, '`docs/notes/mcp-2026规范无状态化解读.md`：无状态化解决什么问题、MRTR 为什么这样设计、授权加固在防什么（按公开发布的标准写）'],
+            [40, '看 Mahesh Murag 的 MCP Workshop 里和笔记相关的段落，补正笔记']
+          ], ok: '笔记初稿完成，面试能直接讲', ref: ['m4.v0', 'm4.r7'] },
+          { id: 'm4-25', t: 'M4 验收 · 简历 v1', gate: 1, k: [
+            [40, 'M4 验收：逐条勾 M4「输出成果 · 验收」，并口述 MCP 无状态化、授权、MRTR 为什么这样设计'],
+            [40, '面试题库：多 Agent、MCP / Skills 两个主题各 5 题（M6 补到各 10 题）'],
+            [25, '简历 v1：P2–P4 各一句带数字的描述'],
+            [15, '阶段复盘写进 journal']
+          ], ok: 'M4 DoD：≥3 个 MCP Server 过 Inspector；跨系统任务端到端；Supervisor vs Swarm 对比表；≥2 个 Skill 在两个客户端可用；能讲清 MCP 的设计取舍' }
         ]
       },
       {
-        id: 'm5', code: 'M5', name: '评测体系 + 上下文工程 / Harness / SDD', short: '评测 + 上下文工程', w0: 17, w1: 22, hours: 50, from: '2027-02-25', to: '2027-03-31', span: '02/25 – 03/31 · 25 个工作日', accept: '03/31',
-        note: '03-16 写简历 v1，03-31 验收并做第一次模拟面试，为金三银四投递提前。',
+        id: 'm5', code: 'M5', name: '评测体系 + 上下文工程 / Harness / SDD', short: '评测 + 上下文工程',
+        note: '本阶段末做第一次模拟面试；简历 v2 补上 P5 的数字。',
         goal: '把前四个项目从"能跑"升级为"可证明"，同时补齐 JD 里两个新兴项。这个月的产出是面试时最能拉开档位的部分。',
         jd: ['评测（新兴 · 中频）', '上下文工程 / Harness 工程 / SDD（新兴 · 中频）', 'Prompt 工程（高级）'],
         topics: [
@@ -642,11 +1146,129 @@
           ['LangSmith 助力 RAG 和 Agent 评估（上）', '沧海九粟 · B站', 'https://www.bilibili.com/video/BV1WdNheeEGG/', 'ZH', '22m', 'LangSmith 评估的中文实操'],
           ['Harness Engineering（Ryan Lopopolo, OpenAI）', 'AI Engineer', 'https://www.youtube.com/watch?v=am_oeAoUhew', 'EN', '~20m', 'OpenAI 工程师讲 harness 实践'],
           ['Introducing Spec Kit for Spec-Driven Development', 'Visual Studio Code', 'https://www.youtube.com/watch?v=DTw9X7MtU5s', 'EN', '~1h', 'Spec Kit 作者演示 SDD 工作流']
+        ],
+        days: [
+          { id: 'm5-01', t: '评测金字塔与错误分析', k: [
+            [50, '读 Hamel Husain《Your AI Product Needs Evals》，理解评测金字塔：Prompt 单测 → 组件评测 → 端到端 → 在线 / A/B'],
+            [40, '看 Hamel 的 50 分钟视频前半段（从错误分析起步）'],
+            [30, '列一张表：P2–P4 各自停在金字塔的哪一层、缺什么']
+          ], ok: 'P2–P4 的评测缺口表已写', ref: ['m5.r4', 'm5.v2'] },
+          { id: 'm5-02', t: 'LLM-as-Judge 原理', k: [
+            [50, '读 MT-Bench 论文：单答案打分与 pairwise、位置偏差、冗长偏差、自我偏好'],
+            [40, '看完 Hamel 视频的后半段'],
+            [30, '写 5 行 rubric 设计要点']
+          ], ok: '5 行 rubric 设计要点已写', ref: ['m5.r5', 'm5.v2'] },
+          { id: 'm5-03', t: 'SDD：P5 spec', k: [
+            [30, '读 Spec Kit 的 README（spec → plan → tasks），或看 Spec Kit 介绍视频的前半段'],
+            [70, '写 P5 spec：统一评测集、Runner、Judge、CI 回归、报告、移交文档各自的需求与验收标准'],
+            [20, '自审：每条需求能不能被验证，不能就改写']
+          ], ok: 'P5 spec 初稿已提交', ref: ['m5.r13', 'm5.v5'] },
+          { id: 'm5-04', t: 'P5 plan + tasks', k: [
+            [50, '写 P5 plan：技术选型、目录结构、数据流'],
+            [40, '写 P5 tasks：每个任务不超过 2 小时，带完成标准'],
+            [30, '按 spec 逐条自审 plan 与 tasks，记下修正了哪 3 处']
+          ], ok: 'spec / plan / tasks 三份文档齐全', ref: ['m5.r13', 'm5.r14'] },
+          { id: 'm5-05', t: '评测工具取舍', k: [
+            [60, 'LangSmith Evaluate / DeepEval / promptfoo 各用 P2 的 5 条跑一个最小例子'],
+            [40, '选型表：上手成本、CI 友好度、Judge 可定制程度、报告、费用'],
+            [20, '在 plan 里写定最终选择和理由']
+          ], ok: '选型表已写，plan 里有最终选择', ref: ['m5.r0', 'm5.r1', 'm5.r2'] },
+          { id: 'm5-06', t: '评测集 schema 与版本管理', k: [
+            [50, '定统一 schema：id、suite、input、expected、tags、difficulty、source、version'],
+            [40, '加载器 + Pydantic 校验，把 P2 的 50 条迁进来'],
+            [30, '版本管理约定：评测集改动走 PR、写 changelog；划分 dev / test']
+          ], ok: 'P2 的 50 条能被统一加载并通过校验' },
+          { id: 'm5-07', t: 'P3 评测集（50 条）', k: [
+            [80, '写 50 条：知识问答 20、代码操作 20、路由 / 拒答 / 安全 10，其中一部分从 LangSmith trace 里采样真实输入'],
+            [40, '入库并通过 schema 校验，抽 5 条人工复核']
+          ], ok: 'P3 的 50 条已入库' },
+          { id: 'm5-08', t: 'P4 评测集（50 条）+ 故障注入', k: [
+            [70, '写 50 条跨系统任务，标注期望的工具调用与最终状态'],
+            [50, '故障注入：MCP 超时、返回错误、缺参数各 3 条']
+          ], ok: '评测集合计 ≥150 条（P2 50 + P3 50 + P4 50）' },
+          { id: 'm5-09', t: 'Runner：统一执行与报告', k: [
+            [80, 'Runner：按 suite 运行、并发、结果缓存、失败重试；输出 JSON 与 Markdown 报告'],
+            [40, '一条命令跑完三个 suite，生成基线报告']
+          ], ok: '一条命令能出三个 suite 的报告' },
+          { id: 'm5-10', t: '规则评分 + Judge v1', k: [
+            [50, '规则评分：关键词、工具调用序列、最终状态断言'],
+            [50, 'Judge v1：给开放式回答打 1–5 分并给理由，rubric 放进版本库'],
+            [20, '抽 10 条看 Judge 的理由是否站得住']
+          ], ok: '规则 + Judge 混合评分可跑；10 条抽查有记录' },
+          { id: 'm5-11', t: '人工标注 30 条', k: [
+            [20, '写标注准则，和 Judge rubric 用同一口径'],
+            [80, '人工标注 30 条，盲标（不看 Judge 的分数）'],
+            [20, '记下 5 个难判的边界例子，补进准则']
+          ], ok: '30 条人工标注完成，准则里有 5 个边界例子' },
+          { id: 'm5-12', t: 'Judge 一致性', k: [
+            [50, '计算 Judge 与人工的一致性（Cohen’s kappa 或 Spearman），算法写进报告'],
+            [50, '给分歧分类：位置偏差 / 冗长偏差 / rubric 模糊 / 人工失误'],
+            [20, '定下一轮改进的假设']
+          ], ok: '有一致性数字和分歧分类表', ref: ['x.kappa'] },
+          { id: 'm5-13', t: 'Judge 迭代：缓解偏差', k: [
+            [70, '迭代 rubric：加锚点示例、pairwise 时交换位置、削弱长度的影响；每轮记录改动和分数'],
+            [50, '新标注 10 条作留出集，验证没有对那 30 条过拟合']
+          ], ok: '每轮迭代都有改动与分数记录；留出集已标注' },
+          { id: 'm5-14', t: 'Judge 达标 + 校准报告', k: [
+            [60, '继续迭代到一致性 ≥0.8；达不到就写清差距和原因'],
+            [60, '校准报告：方法、数据、每轮结果、剩余偏差']
+          ], ok: '校准报告已写' },
+          { id: 'm5-15', t: 'CI 回归（上）', k: [
+            [80, 'GitHub Actions：PR 触发，跑 smoke suite（控制成本），报告作为构件上传'],
+            [40, '报告与基线对比，退化项高亮']
+          ], ok: '提一个 PR 后 CI 能跑出对比报告', ref: ['x.gha'] },
+          { id: 'm5-16', t: 'CI 回归（下）：门禁', k: [
+            [60, '阈值与门禁：关键指标下降超过设定比例就失败；用重复运行或置信区间处理结果波动'],
+            [40, '故意提交一个会退化的改动，确认 CI 能拦住'],
+            [20, 'README 写 CI 的用法']
+          ], ok: '有一次「被 CI 拦住」的真实记录' },
+          { id: 'm5-17', t: '防过拟合 + 回归用例移交', k: [
+            [40, '写规则：dev / test 划分，test 集只在验收时跑，评测集版本的冻结流程'],
+            [60, '回归用例移交文档初稿：用例说明、运行方式、判定标准、怎么新增用例'],
+            [20, '用 5 行回答「评测集怎么防止过拟合」']
+          ], ok: '移交文档初稿已提交' },
+          { id: 'm5-18', t: '上下文工程：理论 + 现状拆解', k: [
+            [50, '读 Anthropic《Effective context engineering for AI agents》，看 Lance Martin 的视频（write / select / compress / isolate）'],
+            [50, '拆解 P4 一次任务的 token 构成：system / 工具定义 / 历史 / 工具结果'],
+            [20, '定目标：token 下降 ≥30% 且成功率不降']
+          ], ok: '优化前的 token 构成表已写', ref: ['m5.r6', 'm5.v0', 'm5.v1'] },
+          { id: 'm5-19', t: '上下文优化（上）：压缩历史 + 裁剪工具结果', k: [
+            [70, 'compaction：历史超过阈值时做摘要；大的工具结果截断或摘要'],
+            [50, '开 / 关两组对比 token 与成功率']
+          ], ok: 'compaction 可开关，并有开 / 关两组数字' },
+          { id: 'm5-20', t: '上下文优化（中）：子 Agent 隔离 + 工具按需加载', k: [
+            [60, '子 Agent 只拿必要的上下文；工具描述按需加载（先检索工具清单再挂载）'],
+            [60, '两项各自做开 / 关对比']
+          ], ok: '两项优化都能开关，并各有数字' },
+          { id: 'm5-21', t: '上下文优化（下）：量化报告', k: [
+            [70, '组合开关在 P4 suite 上全量跑：token、成功率、延迟'],
+            [50, '上下文优化报告：拆解表、哪项贡献最大、压缩会丢掉什么']
+          ], ok: '优化报告已写；没达标就如实写差距' },
+          { id: 'm5-22', t: 'Harness 工程', k: [
+            [50, '读 OpenAI《Harness engineering》和 Anthropic 关于长时任务 harness 的两篇文章'],
+            [50, '做十一原语对照表：P3 / P4 在每个原语上的现状与差距'],
+            [20, '速读 12-Factor Agents，挑 3 条写进 P6 的设计约束']
+          ], ok: '十一原语对照表已写', ref: ['m5.r8', 'm5.r9', 'm5.r10', 'm5.r11', 'm5.r12'] },
+          { id: 'm5-23', t: 'P5 README + 移交验证', k: [
+            [50, '按移交文档在全新目录、新 shell 里从零跑一遍，补上缺漏'],
+            [50, 'P5 README：架构、命令、报告示例'],
+            [20, '核对代码与 spec 是否一致']
+          ], ok: '按文档能跑通；README 已写' },
+          { id: 'm5-24', t: '笔记：LLM-as-Judge 校准实践', k: [
+            [90, '`docs/notes/llm-as-judge校准实践.md`：按公开发布的标准写，配你自己的一致性数据'],
+            [30, '简历 v2：补上 P5 的数字']
+          ], ok: '笔记定稿，随时可以发布；简历 v2 已更新' },
+          { id: 'm5-25', t: 'M5 验收 · 模拟面试 #1', gate: 1, k: [
+            [35, 'M5 验收：逐条勾 M5「输出成果 · 验收」'],
+            [30, '面试题库：评测、上下文工程两个主题各 5 题'],
+            [45, '模拟面试 #1：让 Claude 扮演面试官，围绕 P2–P5 追问'],
+            [10, '复盘：哪 3 个问题答得最差，写进 journal']
+          ], ok: 'M5 DoD：评测集 ≥150 条；Judge 一致性 ≥0.8；CI 回归；上下文优化 token 下降 ≥30% 且成功率不降；spec / plan / tasks 齐全' }
         ]
       },
       {
-        id: 'm6', code: 'M6', name: '毕业项目、框架对照与求职', short: '毕业项目与求职', w0: 22, w1: 26, hours: 42, from: '2027-04-01', to: '2027-04-30', span: '04/01 – 04/30 · 21 个工作日', accept: 'P6 04/20 · 终局 04/30',
-        note: '04-05 清明不排任务；P6 验收 04-20，04-30 终局复盘。',
+        id: 'm6', code: 'M6', name: '毕业项目、框架对照与求职', short: '毕业项目与求职',
+        note: 'P6 在本阶段第 13 天验收，之后是框架对照、系统设计与求职收尾。',
         goal: '把所有能力收束成一个可展示的端到端系统，补齐框架广度，完成求职材料。这个月的验收对象是简历和面试官。',
         jd: ['全部七项综合验收'],
         topics: [
@@ -691,6 +1313,101 @@
           ['LangSmith Deployment GA：部署 Agent 最简路径', 'LangChain', 'https://www.youtube.com/watch?v=YWVuBLSbNWE', 'EN', '~10m', '官方部署概览'],
           ['Building Deep Agents and Deploying in Production', 'LangChain', 'https://www.youtube.com/watch?v=IZabCqyBJLg', 'EN', '~40m', '从构建到上线的官方完整演示'],
           ['大模型落地企业应用实战项目经验分享', '但问智能 · B站', 'https://www.bilibili.com/video/BV11p4y1R7Dy/', 'ZH', '58m', '企业落地的系统设计与踩坑']
+        ],
+        days: [
+          { id: 'm6-01', t: 'P6 选题 + spec', k: [
+            [30, '看 2–3 家目标公司的 JD 与业务，选一个场景（研发团队的需求分析 + 代码审查 + 知识问答，或客服 / 运营）'],
+            [70, '写 P6 spec 并画架构图，列出复用 P2–P5 的哪些组件'],
+            [20, '对照 12-Factor Agents 检查设计']
+          ], ok: 'P6 spec 已提交，复用清单明确', ref: ['m6.r2', 'm6.v0'] },
+          { id: 'm6-02', t: '安全：prompt injection + OWASP', k: [
+            [50, '读 OWASP LLM Top 10，针对 P6 做一张「威胁 → 缓解」表'],
+            [50, '写 10 条注入用例放进评测集，包括间接注入（文档里埋指令）'],
+            [20, '列出工具权限最小化清单']
+          ], ok: '威胁表已写；10 条注入用例已入库', ref: ['m6.r1'] },
+          { id: 'm6-03', t: 'P6 实现（1）：骨架与复用', k: [
+            [70, 'FastAPI 服务骨架 + 配置管理；接入 P2 的检索子图和 P5 的评测 Runner'],
+            [50, '健康检查接口、结构化日志、统一错误处理']
+          ], ok: '服务能起来，健康检查返回 200' },
+          { id: 'm6-04', t: 'P6 实现（2）：需求分析 Agent', k: [
+            [80, '需求分析 Agent：输入一段需求，输出结构化结果（用户故事、验收标准、风险），并引用知识库'],
+            [40, '用 5 条用例试跑并修正']
+          ], ok: '给一段需求能产出结构化结果，并带引用' },
+          { id: 'm6-05', t: 'P6 实现（3）：代码审查 Agent', k: [
+            [80, '代码审查 Agent：读 diff，按规则清单和知识库给出审查意见（通过 MCP 或工具读仓库）'],
+            [40, '用 3 个真实 diff 试跑并修正']
+          ], ok: '对真实 diff 能给出有依据的审查意见' },
+          { id: 'm6-06', t: 'P6 实现（4）：问答 + Supervisor', k: [
+            [60, '知识问答子 Agent（复用 P3）'],
+            [60, 'Supervisor 编排三个子 Agent，跑通 3 个端到端场景']
+          ], ok: '3 个端到端场景可以演示' },
+          { id: 'm6-07', t: 'P6 评测集 + baseline', k: [
+            [80, '评测集 ≥60 条（三类场景各 20），复用 P5 的 schema、Runner、Judge'],
+            [40, '跑 baseline 并存档']
+          ], ok: '评测集 ≥60 条；baseline 数字已存档' },
+          { id: 'm6-08', t: 'P6 优化迭代', k: [
+            [90, '按 baseline 的失败归因做 3 次迭代，每次只改一处并重跑评测'],
+            [30, '迭代表：改动 / 指标 / 成本']
+          ], ok: '至少 3 次带数字的迭代记录' },
+          { id: 'm6-09', t: '成本控制：上限、限流、降级', k: [
+            [50, '每次请求与每天的 token 上限；超限时降级（换便宜模型或只做检索）'],
+            [40, '限流与重试退避；模型不可用时的兜底'],
+            [30, '3 个故障注入测试：超预算、被限流、模型不可用']
+          ], ok: '3 个故障注入测试通过' },
+          { id: 'm6-10', t: '可观测与成本报告', k: [
+            [60, 'LangSmith 全链路 trace，按场景统计平均成本与 P95 延迟'],
+            [60, '成本报告：每类任务的平均成本、P95 延迟、优化前后对比']
+          ], ok: '成本报告里有每类任务的平均成本与 P95', ref: ['m3.r8'] },
+          { id: 'm6-11', t: 'Docker 一键部署', k: [
+            [80, 'Dockerfile + docker compose（应用 + Milvus + ES）一键启动；或评估 LangSmith Deployment'],
+            [40, '在全新目录一键启动，跑 smoke 测试']
+          ], ok: '全新目录一键启动成功，smoke 测试通过', ref: ['m6.r0', 'm6.v1'] },
+          { id: 'm6-12', t: 'P6 收尾：文档四件套', k: [
+            [40, 'README：场景、架构图、快速开始'],
+            [40, '评测报告：指标、迭代历程、失败分析'],
+            [40, '部署说明与成本报告定稿']
+          ], ok: 'README、架构图、评测报告、部署说明四件齐全' },
+          { id: 'm6-13', t: 'P6 验收 · 演示录制', gate: 1, k: [
+            [40, 'P6 验收：逐条勾 M6 清单里和 P6 相关的项'],
+            [50, '录 3–5 分钟演示视频（端到端场景 + 评测报告 + 成本）'],
+            [30, '简历里补 P6 一句带数字的描述']
+          ], ok: 'P6 DoD：一键部署；README + 架构图 + 部署说明；评测报告；成本报告', ref: ['m6.v2'] },
+          { id: 'm6-14', t: '框架对照：Dify', k: [
+            [30, '读 Dify 文档：应用类型、工作流、知识库'],
+            [70, '用 Dify 复刻 P4 的一个子任务（如销售查询），接同样的模型'],
+            [20, '记录搭建耗时、可控性、局限']
+          ], ok: 'Dify 版子任务能跑；对照记录已写', ref: ['m6.r3'] },
+          { id: 'm6-15', t: '框架对照：CrewAI + AutoGPT', k: [
+            [70, '用 CrewAI 复刻同一个子任务，记录角色 / 任务抽象和 LangGraph 的差异'],
+            [50, '按 AutoGPT 仓库的 README 跑一次同任务；跑不起来就记录原因，改为读架构文档写取舍']
+          ], ok: 'CrewAI 版可运行；AutoGPT 的体验或取舍记录已写', ref: ['m6.r4', 'm6.r5'] },
+          { id: 'm6-16', t: '六框架取舍笔记', k: [
+            [90, '六框架对照笔记（LangChain / LangGraph / LlamaIndex / Dify / AutoGPT / CrewAI）：适用场景、局限、你的实验数字'],
+            [30, '把结论整理成面试时 1 分钟能讲完的版本']
+          ], ok: '六框架对照笔记定稿' },
+          { id: 'm6-17', t: '系统设计演练 #1', k: [
+            [80, '题目：设计一个电商客服多 Agent 系统。限时 45 分钟写作答稿（需求澄清、架构、数据流、评测、成本、风险）'],
+            [40, '让 Claude 当面试官追问并点评，按点评修改']
+          ], ok: '作答稿与点评记录已存' },
+          { id: 'm6-18', t: '系统设计演练 #2', k: [
+            [80, '题目：设计一个企业内部 MCP 网关（鉴权、路由、审计、限流、多租户）。限时作答'],
+            [40, '追问、点评、修改']
+          ], ok: '第二篇作答稿与点评记录已存' },
+          { id: 'm6-19', t: '面试题库补齐', k: [
+            [40, 'Prompt 主题 10 题（M1 的内容）'],
+            [50, '多 Agent、MCP / Skills、评测、上下文工程四个主题各补到 10 题'],
+            [30, '系统设计主题 10 题（可以复用两次演练）']
+          ], ok: '`docs/interview/` 下 8 个主题各 10 题' },
+          { id: 'm6-20', t: '笔记发布 + 简历定稿 + 模拟面试 #2', k: [
+            [40, '三篇笔记（LangGraph 执行模型 / MCP 无状态化 / LLM-as-Judge 校准）发到知乎、掘金或博客'],
+            [30, '简历定稿：6 个项目各一句带数字的描述'],
+            [50, '模拟面试 #2：完整一轮（项目深挖 + 系统设计），记下 3 个改进点']
+          ], ok: '3 篇笔记已发布并有链接；简历定稿；模拟面试 #2 已做' },
+          { id: 'm6-21', t: '终局复盘', gate: 1, k: [
+            [40, 'M6 验收：逐条勾 M6「输出成果 · 验收」，并更新蓝图末尾的「进度追踪」'],
+            [50, '写总结：计划 vs 实际（打卡天数、提前 / 推迟）、最有价值的 3 个项目数字、最大的坑'],
+            [30, '下一步：投递清单、要补的短板、下一个学习方向']
+          ], ok: '全部验收完成；总结与下一步清单已写' }
         ]
       }
     ],
@@ -705,15 +1422,67 @@
     ]
   };
 
-  const TYPE_ZH = { docs: '文档', course: '课程', article: '文章', paper: '论文', tool: '工具' };
+  const TYPE_ZH = { docs: '文档', course: '课程', article: '文章', paper: '论文', tool: '工具', video: '视频' };
+  const WD = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
   const LS_KEY = 'agent26-progress-v1';
   const LS_TAB = 'agent26-tab';
+  const LS_VIEW = 'agent26-daily-filter';
+
+  /* =========================== 日期工具 =========================== */
+  function parseDate(s) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || '');
+    if (!m) return null;
+    const d = new Date(+m[1], +m[2] - 1, +m[3]);
+    return d.getMonth() === +m[2] - 1 ? d : null;
+  }
+  function fmt(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function addDays(s, n) { const d = parseDate(s); d.setDate(d.getDate() + n); return fmt(d); }
+  function diffDays(a, b) { return Math.round((parseDate(b) - parseDate(a)) / 86400000); }
+  function dow(s) { return parseDate(s).getDay(); }
+  function md(s) { return s.slice(5); }
+  function mds(s) { return s.slice(5).replace('-', '/'); }
+  function wd(s) { return WD[dow(s)]; }
+  function mondayOf(s) { return addDays(s, -((dow(s) + 6) % 7)); }
+  // 凌晨 4 点前还算前一天：熬夜打卡不会记到第二天
+  function todayStr() { return fmt(new Date(Date.now() - 4 * 3600 * 1000)); }
+
+  /* =========================== 计划日期（固定） =========================== */
+  const DAYS = [];
+  const DAY_BY_ID = {};
+  PLAN.phases.forEach(p => (p.days || []).forEach(d => { d.phase = p.id; DAYS.push(d); DAY_BY_ID[d.id] = d; }));
+  function isBaseWorkday(s) { const w = dow(s); return w !== 0 && w !== 6 && !HOLIDAYS[s]; }
+  const BASE = {};
+  const BASE_LIST = [];
+  (function () {
+    let d = START;
+    while (BASE_LIST.length < DAYS.length + 260) { if (isBaseWorkday(d)) BASE_LIST.push(d); d = addDays(d, 1); }
+    DAYS.forEach((day, i) => { BASE[day.id] = BASE_LIST[i]; day.n = i + 1; });
+  })();
+  // 计划工作日里早于 s 的天数
+  function bIndex(s) {
+    let lo = 0, hi = BASE_LIST.length;
+    while (lo < hi) { const mid = (lo + hi) >> 1; if (BASE_LIST[mid] < s) lo = mid + 1; else hi = mid; }
+    return lo;
+  }
+  PLAN.phases.forEach(p => {
+    if (!p.days) return;
+    p.from = BASE[p.days[0].id];
+    p.to = BASE[p.days[p.days.length - 1].id];
+    p.hours = p.days.length * 2;
+    const hol = HOLIDAY_GROUPS.map(g => [g[0], g[1].filter(d => d >= p.from && d <= p.to)]).filter(g => g[1].length);
+    p.holNote = hol.map(g => g[0] + '（' + (g[1].length > 1 ? mds(g[1][0]) + ' – ' + mds(g[1][g[1].length - 1]) : mds(g[1][0])) + '）').join('、');
+  });
+  const PLAN_END = BASE[DAYS[DAYS.length - 1].id];
 
   /* =========================== 状态 =========================== */
-  let state = { done: {}, startDate: PLAN.start, reviewed: {}, updatedAt: '' };
+  function blankState() { return { done: {}, reviewed: {}, tasks: {}, days: {}, rest: {}, startDate: START, updatedAt: '' }; }
+  let state = blankState();
   let dbDoc = null;
-  let saveMode = 'init';
-  let activeTab = 'auto';
+  let activeTab = 'daily';
+  let dailyFilter = 'all';
+  let peekId = null;
+  let lastDay = '';
+  const openState = {};
   // 本地版本号：每次用户改动 +1；savedVersion 是云端已确认写入的版本。
   // 两者不相等时，云端推来的快照一律忽略，避免旧快照把刚勾的项冲掉。
   let localVersion = 0;
@@ -723,6 +1492,77 @@
   let writeFailures = 0;
   let seeded = false;
 
+  function isStudyDay(s) {
+    const o = state.rest[s];
+    if (o === 'off') return false;
+    if (o === 'on') return true;
+    return isBaseWorkday(s);
+  }
+  function nextStudyDay(s) { let d = s; for (let i = 0; i < 400; i++) { d = addDays(d, 1); if (isStudyDay(d)) return d; } return d; }
+  function prevStudyDay(s) { let d = s; for (let i = 0; i < 60; i++) { d = addDays(d, -1); if (isStudyDay(d)) return d; } return null; }
+  function reqTasks(day) { return day.k.map((k, i) => i).filter(i => !day.k[i][2]); }
+  function reqMinutes(day) { return reqTasks(day).reduce((a, i) => a + day.k[i][0], 0); }
+  function doneMinutes(day) { return reqTasks(day).filter(i => state.tasks[day.id + '.' + i]).reduce((a, i) => a + day.k[i][0], 0); }
+  function phaseById(id) { return PLAN.phases.find(p => p.id === id); }
+
+  /* =========================== 排期（滚动） =========================== */
+  // 计划日期固定不变；预计日期 = 从今天（今天已完成一天则从下一个学习日）起，把未完成的任务按顺序排到学习日上。
+  function computeCtx() {
+    const t = todayStr();
+    const doneToday = DAYS.filter(d => state.days[d.id] === t);
+    let cursor;
+    if (t < START) cursor = isStudyDay(START) ? START : nextStudyDay(START);
+    else cursor = (isStudyDay(t) && !doneToday.length) ? t : nextStudyDay(t);
+    const proj = {}, pending = [], projByDate = {};
+    DAYS.forEach(day => {
+      if (state.days[day.id]) return;
+      pending.push(day);
+      proj[day.id] = cursor;
+      (projByDate[cursor] = projByDate[cursor] || []).push(day);
+      cursor = nextStudyDay(cursor);
+    });
+    const doneCount = DAYS.length - pending.length;
+    let delta = 0;
+    if (t >= START) {
+      const expY = bIndex(t), expT = expY + (isBaseWorkday(t) ? 1 : 0);
+      if (doneCount >= expT) delta = doneCount - expT;
+      else if (doneCount < expY) delta = doneCount - expY;
+    } else delta = doneCount;
+
+    const byDate = {};
+    DAYS.forEach(d => { const c = state.days[d.id]; if (c) (byDate[c] = byDate[c] || []).push(d); });
+    const doneDates = DAYS.map(d => state.days[d.id]).filter(Boolean).sort();
+    // 过去的学习日：已打卡 / 没打卡但不落后 / 缺卡
+    const pastState = {};
+    let missed = 0, j = 0, cum = 0;
+    for (let d = START; d < t; d = addDays(d, 1)) {
+      while (j < doneDates.length && doneDates[j] <= d) { cum++; j++; }
+      if (byDate[d]) { pastState[d] = 'done'; continue; }
+      if (!isStudyDay(d)) { pastState[d] = 'rest'; continue; }
+      const exp = bIndex(d) + (isBaseWorkday(d) ? 1 : 0);
+      if (cum >= exp) pastState[d] = 'covered'; else { pastState[d] = 'missed'; missed++; }
+    }
+    let streak = 0;
+    for (let d = t, i = 0; d >= START && i < 800; d = addDays(d, -1), i++) {
+      if (byDate[d]) { streak++; continue; }
+      if (d === t) continue;
+      if (isStudyDay(d)) break;
+    }
+    const mon = mondayOf(t), sun = addDays(mon, 6);
+    const weekDone = doneDates.filter(d => d >= mon && d <= sun).length;
+    const next = pending[0] || null;
+    let mode;
+    if (!next) mode = 'finished';
+    else if (doneToday.length) mode = 'done';
+    else if (t >= START && isStudyDay(t)) mode = 'todo';
+    else mode = 'rest';
+    const endDate = next ? proj[pending[pending.length - 1].id] : (doneDates[doneDates.length - 1] || PLAN_END);
+    return { t, proj, pending, projByDate, doneToday, doneCount, delta, byDate, pastState, missed, streak, weekDone, checkins: Object.keys(byDate).length, focus: { mode, day: next }, endDate };
+  }
+  function effDate(day, ctx) { return state.days[day.id] || ctx.proj[day.id]; }
+  function dayDelta(day, ctx) { return bIndex(effDate(day, ctx)) - (day.n - 1); }
+
+  /* =========================== 阶段状态 =========================== */
   function ids(p) {
     const out = [];
     p.topics.forEach((_, i) => out.push(p.id + '.t' + i));
@@ -738,80 +1578,92 @@
   }
   function delivProgress(p) {
     const all = p.deliverables.map((_, i) => p.id + '.d' + i);
-    const done = all.filter(id => state.done[id]).length;
-    return { done, total: all.length };
+    return { done: all.filter(id => state.done[id]).length, total: all.length };
+  }
+  function dayProgress(p) {
+    const ds = p.days || [];
+    const done = ds.filter(d => state.days[d.id]).length;
+    return { done, total: ds.length, pct: ds.length ? done / ds.length : 0 };
   }
   function statusOf(p) {
+    if (p.closed) return 'done';
+    if (p.days) {
+      const dp = dayProgress(p);
+      if (dp.done === dp.total) return 'done';
+      if (dp.done > 0 || p.days.some(d => doneMinutes(d) > 0) || progress(p).done > 0) return 'active';
+      return 'todo';
+    }
     const pr = progress(p);
     if (pr.total && pr.done === pr.total) return 'done';
-    if (pr.done > 0) return 'active';
-    return 'todo';
+    return pr.done > 0 ? 'active' : 'todo';
   }
-  function currentPhase() {
-    return PLAN.phases.find(p => statusOf(p) !== 'done') || PLAN.phases[PLAN.phases.length - 1];
+  function ringPct(p) { return p.closed ? 1 : p.days ? dayProgress(p).pct : progress(p).pct; }
+  function currentPhase() { return PLAN.phases.find(p => statusOf(p) !== 'done') || PLAN.phases[PLAN.phases.length - 1]; }
+  function expectedPhase(t) {
+    if (t < PLAN.phases[0].from) return null;
+    return PLAN.phases.find(p => t <= p.to) || PLAN.phases[PLAN.phases.length - 1];
   }
-  function parseDate(s) {
-    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || '');
-    if (!m) return null;
-    return new Date(+m[1], +m[2] - 1, +m[3]);
-  }
-  function todayDate() { const t = new Date(); t.setHours(0, 0, 0, 0); return t; }
-  // 日程有假期空档、阶段也不一定在周一切换，所以周数和阶段都按 PLAN.weeks / phase.from–to 查表，不再用「开始日期 + 7 天 × N」推算
-  function weekInfo() {
-    const today = todayDate();
-    const first = parseDate(PLAN.weeks[0][1]);
-    if (today < first) {
-      const prep = new Date(first); prep.setDate(prep.getDate() - 7);
-      return { week: today < prep ? -1 : 0, today };
-    }
-    const idx = PLAN.weeks.findIndex(w => today <= parseDate(w[2]));
-    return { week: idx < 0 ? PLAN.weeks.length + 1 : idx + 1, today };
-  }
-  function phaseOfWeek(w) {
-    if (w == null || w < 0) return null;
-    if (w === 0) return PLAN.phases[0];
-    if (w > PLAN.weeks.length) return PLAN.phases[PLAN.phases.length - 1];
-    return PLAN.phases.find(p => p.id === PLAN.weeks[w - 1][3]) || null;
-  }
-  function expectedPhase() {
-    const today = todayDate();
-    if (today < parseDate(PLAN.phases[0].from)) return null;
-    return PLAN.phases.find(p => today <= parseDate(p.to)) || PLAN.phases[PLAN.phases.length - 1];
-  }
-  function fmtDate(d) {
-    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-  }
-  function weekRange(w) {
-    if (w == null || w < 0) return '';
-    if (w === 0) {
-      const f = parseDate(PLAN.weeks[0][1]);
-      const a = new Date(f); a.setDate(a.getDate() - 7);
-      const b = new Date(f); b.setDate(b.getDate() - 1);
-      return fmtDate(a).slice(5) + ' – ' + fmtDate(b).slice(5);
-    }
-    const wk = PLAN.weeks[w - 1];
-    return wk ? wk[1].slice(5) + ' – ' + wk[2].slice(5) : '';
-  }
-  function weekNote(w) { const wk = w >= 1 ? PLAN.weeks[w - 1] : null; return wk ? wk[4] : ''; }
+
+  /* =========================== 文本与小组件 =========================== */
   function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+  function rich(s) { return esc(s).replace(/`([^`]+)`/g, '<code>$1</code>'); }
+  function pill(cls, text) { return `<span class="pill${cls ? ' ' + cls : ''}">${esc(text)}</span>`; }
+  function deltaPill(n) { return n < 0 ? pill('ahead', '提前 ' + (-n) + ' 天') : n > 0 ? pill('behind', '推迟 ' + n + ' 天') : ''; }
+  function restLabel(s) {
+    if (state.rest[s] === 'off') return '休息日（自定义）';
+    if (HOLIDAYS[s] && state.rest[s] !== 'on') return HOLIDAYS[s] + '假期';
+    const w = dow(s);
+    return w === 0 || w === 6 ? '周末' : '休息日';
+  }
+  function resolveRef(ref) {
+    const dot = ref.indexOf('.');
+    const pid = ref.slice(0, dot), key = ref.slice(dot + 1);
+    if (pid === 'x') { const r = EXTRA[key]; return r ? { name: r[0], url: r[1], type: r[2], lang: r[3], id: null } : null; }
+    const p = phaseById(pid); if (!p) return null;
+    const idx = +key.slice(1);
+    if (key[0] === 'r') { const r = p.resources[idx]; return r ? { name: r[0], url: r[1], type: r[2], lang: r[3], id: pid + '.r' + idx } : null; }
+    if (key[0] === 'v') { const v = p.videos[idx]; return v ? { name: v[0], url: v[2], type: 'video', lang: v[3], id: pid + '.v' + idx } : null; }
+    return null;
+  }
+  function refsHtml(day, cls) {
+    const list = (day.ref || []).map(resolveRef).filter(Boolean);
+    if (!list.length) return '';
+    return `<div class="refs${cls ? ' ' + cls : ''}">${list.map(r => {
+      const read = r.id && state.done[r.id];
+      return `<div class="ref${read ? ' read' : ''}"><span class="chip ${r.lang === 'ZH' ? 'zh' : 'en'}">${esc(TYPE_ZH[r.type] || r.type)}</span><a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.name)}</a>${read ? '<span class="rd">已读</span>' : ''}</div>`;
+    }).join('')}</div>`;
+  }
+  function tasksHtml(day) {
+    return `<ul class="tasks">${day.k.map((k, i) => {
+      const id = day.id + '.' + i; const on = !!state.tasks[id]; const opt = !!k[2];
+      return `<li><label class="task${opt ? ' opt' : ''}${on ? ' checked' : ''}"><input type="checkbox" data-task="${id}"${on ? ' checked' : ''}><span class="min">${opt ? '☆' : '★'} ${k[0]}′</span><span class="t">${rich(k[1])}</span></label></li>`;
+    }).join('')}</ul>`;
+  }
+  function critHtml(day) { return `<div class="crit"><span class="k">完成标准</span><span>${rich(day.ok)}</span></div>`; }
+  function phaseLabel(p) { return p.code + ' ' + p.short; }
 
   /* =========================== 持久化 =========================== */
   function normalize(d) {
-    const n = { done: {}, startDate: PLAN.start, reviewed: {}, updatedAt: '' };
-    if (d && typeof d === 'object') {
-      if (d.done && typeof d.done === 'object') Object.keys(d.done).forEach(k => { if (d.done[k]) n.done[k] = true; });
-      if (typeof d.startDate === 'string' && parseDate(d.startDate)) n.startDate = d.startDate;
-      if (d.reviewed && typeof d.reviewed === 'object') Object.keys(d.reviewed).forEach(k => { if (typeof d.reviewed[k] === 'string') n.reviewed[k] = d.reviewed[k]; });
-      if (typeof d.updatedAt === 'string') n.updatedAt = d.updatedAt;
-    }
+    const n = blankState();
+    if (!d || typeof d !== 'object') return n;
+    if (d.done && typeof d.done === 'object') Object.keys(d.done).forEach(k => { if (d.done[k]) n.done[k] = true; });
+    if (d.tasks && typeof d.tasks === 'object') Object.keys(d.tasks).forEach(k => { if (d.tasks[k]) n.tasks[k] = true; });
+    if (d.reviewed && typeof d.reviewed === 'object') Object.keys(d.reviewed).forEach(k => { if (typeof d.reviewed[k] === 'string') n.reviewed[k] = d.reviewed[k]; });
+    if (d.days && typeof d.days === 'object') Object.keys(d.days).forEach(k => { if (parseDate(d.days[k])) n.days[k] = d.days[k]; });
+    if (d.rest && typeof d.rest === 'object') Object.keys(d.rest).forEach(k => { if (parseDate(k) && (d.rest[k] === 'on' || d.rest[k] === 'off')) n.rest[k] = d.rest[k]; });
+    if (typeof d.startDate === 'string' && parseDate(d.startDate)) n.startDate = d.startDate;
+    if (typeof d.updatedAt === 'string') n.updatedAt = d.updatedAt;
     return n;
   }
   function serialize() {
-    return { done: Object.assign({}, state.done), startDate: state.startDate, reviewed: Object.assign({}, state.reviewed), updatedAt: state.updatedAt || '' };
+    return { done: Object.assign({}, state.done), tasks: Object.assign({}, state.tasks), days: Object.assign({}, state.days), rest: Object.assign({}, state.rest), reviewed: Object.assign({}, state.reviewed), startDate: state.startDate, updatedAt: state.updatedAt || '' };
   }
-  function sameContent(a, b) {
-    return JSON.stringify({ d: a.done, s: a.startDate, r: a.reviewed }) === JSON.stringify({ d: b.done, s: b.startDate, r: b.reviewed });
+  function canon(o) {
+    if (o && typeof o === 'object' && !Array.isArray(o)) { const r = {}; Object.keys(o).sort().forEach(k => { r[k] = canon(o[k]); }); return r; }
+    return o;
   }
+  function contentKey(s) { return JSON.stringify(canon({ d: s.done, t: s.tasks, y: s.days, s: s.rest, r: s.reviewed })); }
+  function sameContent(a, b) { return contentKey(a) === contentKey(b); }
   function loadLocal() {
     try { const raw = localStorage.getItem(LS_KEY); if (raw) return normalize(JSON.parse(raw)); } catch (e) { /* storage unavailable */ }
     return null;
@@ -820,7 +1672,6 @@
     try { localStorage.setItem(LS_KEY, JSON.stringify(serialize())); } catch (e) { /* storage unavailable */ }
   }
   function setSaveMode(mode, text) {
-    saveMode = mode;
     const el = document.getElementById('save');
     el.dataset.mode = mode;
     document.getElementById('saveText').textContent = text;
@@ -884,7 +1735,7 @@
       if (!sameContent(remote, state)) {
         state = remote;
         saveLocal();
-        syncDom(); // 就地更新勾选框，不重建页面
+        render();
       } else if (remote.updatedAt) {
         state.updatedAt = remote.updatedAt;
       }
@@ -896,132 +1747,340 @@
   }
   // 关页面前把还没写完的改动尽力送出去
   window.addEventListener('pagehide', () => { if (dbDoc && !writing && localVersion !== savedVersion) { clearTimeout(writeTimer); flush(); } });
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && dbDoc && !writing && localVersion !== savedVersion) { clearTimeout(writeTimer); flush(); } });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden' && dbDoc && !writing && localVersion !== savedVersion) { clearTimeout(writeTimer); flush(); }
+    if (document.visibilityState === 'visible' && todayStr() !== lastDay) render();
+  });
 
-  /* =========================== 渲染 =========================== */
-  function renderStats() {
-    const all = PLAN.phases.reduce((a, p) => { const pr = progress(p); a.done += pr.done; a.total += pr.total; return a; }, { done: 0, total: 0 });
-    const dl = PLAN.phases.reduce((a, p) => { const pr = delivProgress(p); a.done += pr.done; a.total += pr.total; return a; }, { done: 0, total: 0 });
-    const pct = all.total ? Math.round(all.done / all.total * 100) : 0;
+  /* =========================== 渲染：概览 =========================== */
+  function renderStats(ctx) {
+    const pct = Math.round(ctx.doneCount / DAYS.length * 100);
     const cur = currentPhase();
-    const wi = weekInfo();
-    const expected = expectedPhase();
-    const curIdx = PLAN.phases.indexOf(cur);
-    const expIdx = expected ? PLAN.phases.indexOf(expected) : -1;
-
-    let weekV, weekD;
-    if (wi.week < 0) { weekV = '开始前'; weekD = '第 1 周从 ' + PLAN.weeks[0][1] + ' 起'; }
-    else if (wi.week > 26) { weekV = 'W26+'; weekD = '26 周已过，进入自由复盘'; }
-    else { weekV = 'W' + wi.week; weekD = weekRange(wi.week) + (wi.week === 0 ? ' · 准备周' : '') + (weekNote(wi.week) ? ' · ' + weekNote(wi.week) : ''); }
-
-    let pace = '', paceCls = '';
-    if (expIdx >= 0 && wi.week >= 0) {
-      if (curIdx > expIdx) { pace = '领先 ' + (curIdx - expIdx) + ' 个阶段'; paceCls = 'ahead'; }
-      else if (curIdx === expIdx) { pace = '按计划'; paceCls = 'done'; }
-      else { pace = '落后 ' + (expIdx - curIdx) + ' 个阶段'; paceCls = 'behind'; }
-    } else if (wi.week != null && wi.week < 0) { pace = '尚未开始'; paceCls = ''; }
-
-    const allDone = PLAN.phases.every(p => statusOf(p) === 'done');
+    const expected = expectedPhase(ctx.t);
+    let paceV, paceCls = '';
+    if (ctx.focus.mode === 'finished') paceV = '全部完成';
+    else if (ctx.delta > 0) { paceV = '提前 ' + ctx.delta + '<small>天</small>'; paceCls = ' ahead'; }
+    else if (ctx.delta < 0) { paceV = '推迟 ' + (-ctx.delta) + '<small>天</small>'; paceCls = ' behind'; }
+    else paceV = '按计划';
+    const endCmp = ctx.endDate === PLAN_END ? '与计划一致' : '计划 ' + mds(PLAN_END);
+    const curDays = cur.days ? dayProgress(cur) : null;
+    const curLine = curDays
+      ? `第 ${Math.min(curDays.done + 1, curDays.total)} / ${curDays.total} 天 · 计划验收 ${mds(cur.to)}`
+      : '阶段已完成';
     document.getElementById('stats').innerHTML = `
       <div class="stat">
-        <p class="k">总进度</p>
-        <p class="v">${pct}<small>%</small><small>· ${all.done} / ${all.total} 项</small></p>
-        <div class="bar${allDone ? ' done' : ''}"><i style="width:${pct}%"></i></div>
+        <p class="k">逐日进度</p>
+        <p class="v">${ctx.doneCount}<small>/ ${DAYS.length} 天</small></p>
+        <div class="bar${ctx.doneCount === DAYS.length ? ' done' : ''}"><i style="width:${pct}%"></i></div>
+        <p class="d">本周完成 ${ctx.weekDone} 天 · ${pct}%</p>
       </div>
       <div class="stat">
-        <p class="k">当前周</p>
-        <p class="v">${esc(weekV)}<small>/ 26</small></p>
-        <p class="d">${esc(weekD)}</p>
+        <p class="k">节奏</p>
+        <p class="v${paceCls}">${paceV}</p>
+        <p class="d">${ctx.focus.mode === 'finished' ? '已于' : '预计'} ${mds(ctx.endDate)} 学完 · ${esc(endCmp)}</p>
+      </div>
+      <div class="stat">
+        <p class="k">连续打卡</p>
+        <p class="v">${ctx.streak}<small>天</small></p>
+        <p class="d">累计打卡 ${ctx.checkins} 天 · 缺卡 ${ctx.missed} 天</p>
       </div>
       <div class="stat">
         <p class="k">当前阶段</p>
         <p class="v">${cur.code}<small>${esc(cur.short)}</small></p>
-        <p class="d">${pace ? `<span class="pill ${paceCls}">${esc(pace)}</span>` : ''}${expected && expected.id !== cur.id ? `<span>按日历应在 ${expected.code}</span>` : ''}</p>
-      </div>
-      <div class="stat">
-        <p class="k">输出成果</p>
-        <p class="v">${dl.done}<small>/ ${dl.total} 项验收</small></p>
-        <div class="bar${dl.done === dl.total ? ' done' : ''}"><i style="width:${dl.total ? dl.done / dl.total * 100 : 0}%"></i></div>
+        <p class="d">${esc(curLine)}${expected && expected.id !== cur.id && expected.days ? ` · <span>按日历应在 ${expected.code}</span>` : ''}</p>
       </div>`;
   }
 
+  function tipsFor(ctx) {
+    const tips = [];
+    const t = ctx.t, mode = ctx.focus.mode;
+    if (t >= START && mode !== 'finished' && isStudyDay(t)) {
+      const nx = nextStudyDay(t);
+      if (diffDays(t, nx) >= 4) {
+        const names = [];
+        for (let d = addDays(t, 1); d < nx; d = addDays(d, 1)) if (HOLIDAYS[d] && state.rest[d] !== 'on' && names.indexOf(HOLIDAYS[d]) < 0) names.push(HOLIDAYS[d]);
+        tips.push(`明天起休息到 ${md(addDays(nx, -1))}${names.length ? '（' + names.join('、') + '）' : ''}，${md(nx)} 回来。今天收尾：提交代码，写 3 行「回来先做什么」。`);
+      }
+      const pv = prevStudyDay(t);
+      if (pv && pv >= START && diffDays(pv, t) >= 5) tips.push('假期后第一天：先 git pull、uv sync、docker compose up -d，把上次的测试跑一遍，再开始今天的任务。');
+    }
+    if (mode !== 'finished') {
+      if (ctx.delta <= -11) tips.push('已推迟 10 天以上：停止硬追，按「节奏与原则」里的办法整体重排。');
+      else if (ctx.delta <= -6) tips.push('已推迟 6 天以上：启用削减阶梯，从第 1 级开始，够了就停。');
+      else if (ctx.delta <= -3) tips.push('已推迟 3 天以上：☆ 选做项先全部跳过。');
+    }
+    return tips.length ? `<ul class="tips">${tips.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '';
+  }
+
+  function meterHtml(day) {
+    const req = reqMinutes(day), dm = doneMinutes(day);
+    return `<div><p class="side-k">必做进度</p><p class="meter-v">${dm}<small>/ ${req} 分钟</small></p><div class="bar${dm >= req ? ' done' : ''}"><i style="width:${req ? dm / req * 100 : 0}%"></i></div></div>`;
+  }
+  function datePills(day, ctx) {
+    const base = BASE[day.id], date = effDate(day, ctx);
+    const out = [];
+    if (date !== base) out.push(pill('', '计划 ' + md(base)));
+    const dl = deltaPill(dayDelta(day, ctx));
+    if (dl) out.push(dl);
+    if (day.gate) out.push(pill('accent', '验收'));
+    return out.join('');
+  }
+  function nextBlock(day, ctx, verb) {
+    const p = phaseById(day.phase);
+    const date = ctx.proj[day.id];
+    const peeking = peekId === day.id;
+    return `<div class="next">
+      <div class="nw">下一天 · D${day.n} · ${md(date)} ${wd(date)} · ${esc(phaseLabel(p))}</div>
+      <div class="nt">${esc(day.t)}</div>
+      <div class="today-pills">${datePills(day, ctx)}</div>
+      <div><button class="btn ${peeking ? 'quiet' : 'ghost'}" type="button" data-action="${peeking ? 'unpeek' : 'peek'}" data-day="${day.id}">${peeking ? '收起' : esc(verb)}</button></div>
+      ${peeking ? `<div class="peek">${tasksHtml(day)}${critHtml(day)}<div class="actions"><button class="btn" type="button" data-action="complete-day" data-day="${day.id}">★ 全部完成</button><span>完成后，后面的预计日期会自动往前挪。</span></div>${refsHtml(day, 'inline')}</div>` : ''}
+    </div>`;
+  }
+
+  function renderToday(ctx) {
+    const el = document.getElementById('today');
+    const f = ctx.focus, t = ctx.t;
+    const when = `今天 · ${md(t)} ${wd(t)}`;
+    if (f.mode === 'finished') {
+      el.innerHTML = `<div class="today-head"><div><p class="when">${esc(when)}</p><h2>${DAYS.length} 天的逐日任务全部完成</h2></div><div class="today-pills">${pill('done', '全部完成')}</div></div>
+        <div class="today-body"><div class="today-main"><p class="rest-note">最后一天完成于 ${esc(ctx.endDate)}，计划终点是 ${esc(PLAN_END)}。到「节奏与原则」写一份终局复盘，再把蓝图末尾的「进度追踪」更新掉。</p></div></div>`;
+      return;
+    }
+    const day = f.day, p = phaseById(day.phase);
+    let head, main, side;
+    if (f.mode === 'todo') {
+      head = `<div><p class="when">${esc(when)} · D${day.n} / ${DAYS.length} · ${esc(phaseLabel(p))}</p><h2><span class="code">${day.id.toUpperCase()}</span>${esc(day.t)}</h2></div>
+        <div class="today-pills">${pill('solid', '今日任务')}${datePills(day, ctx)}</div>`;
+      main = `${tasksHtml(day)}<p class="legend-line">★ 必做，合计 ${reqMinutes(day)} 分钟；☆ 选做，不影响当天是否完成。</p>${critHtml(day)}
+        <div class="actions"><button class="btn" type="button" data-action="complete-day" data-day="${day.id}">★ 全部完成</button><span>勾完所有 ★ 会自动记为今天完成。提交时写 <code>checkin: ${day.id.toUpperCase()}</code>。</span></div>`;
+      const after = ctx.pending[1];
+      side = meterHtml(day) + (day.ref ? `<div><p class="side-k">本日资料</p>${refsHtml(day)}</div>` : '') +
+        (after ? `<div><p class="side-k">下一天</p><div class="nw mono" style="font-size:12px;color:var(--ink-3)">D${after.n} · ${md(ctx.proj[after.id])} ${wd(ctx.proj[after.id])}</div><div style="font-size:13.5px;font-weight:500">${esc(after.t)}</div></div>` : '');
+    } else if (f.mode === 'done') {
+      const list = ctx.doneToday;
+      head = `<div><p class="when">${esc(when)} · 今日已完成</p><h2>${list.length > 1 ? '今天完成了 ' + list.length + ' 天的任务' : '今天的 2 小时已完成'}</h2></div>
+        <div class="today-pills">${pill('done', '今日已完成')}${ctx.delta > 0 ? pill('ahead', '提前 ' + ctx.delta + ' 天') : ''}</div>`;
+      main = `<div class="done-list">${list.map(d => `<div class="done-row"><span class="ok">✓</span><span class="grow"><b>D${d.n}</b> · ${esc(d.t)}</span><label>完成于 <input class="date-in" type="date" data-donedate="${d.id}" value="${esc(state.days[d.id])}" max="${t}" aria-label="D${d.n} 完成日期"></label></div>`).join('')}</div>
+        ${nextBlock(day, ctx, '提前开始 D' + day.n)}`;
+      side = `<div><p class="side-k">接下来</p><p style="margin:0;font-size:13.5px;color:var(--ink-2)">D${day.n} 预计在 ${md(ctx.proj[day.id])} ${wd(ctx.proj[day.id])}。有余力可以现在就做，做完后面所有日期自动往前挪。补打卡时把「完成于」改成实际那天。</p></div>` +
+        (day.ref ? `<div><p class="side-k">D${day.n} 的资料</p>${refsHtml(day)}</div>` : '');
+    } else {
+      const nd = ctx.proj[day.id];
+      head = `<div><p class="when">${esc(when)} · ${esc(restLabel(t))}</p><h2>${t < START ? '计划从 ' + md(START) + ' 开始' : '今天休息'}</h2></div>
+        <div class="today-pills">${pill('', restLabel(t))}</div>`;
+      main = `<p class="rest-note">周末和节假日不排任务。下一个学习日是 ${md(nd)} ${wd(nd)}。想提前做也可以，做完同样会把后面的日期往前挪。</p>${nextBlock(day, ctx, '提前开始 D' + day.n)}`;
+      side = day.ref ? `<div><p class="side-k">D${day.n} 的资料</p>${refsHtml(day)}</div>` : `<div><p class="side-k">接下来</p><p style="margin:0;font-size:13.5px;color:var(--ink-2)">${esc(phaseLabel(p))} · 计划验收 ${mds(p.to)}</p></div>`;
+    }
+    el.innerHTML = `<div class="today-head">${head}</div>${tipsFor(ctx)}<div class="today-body"><div class="today-main">${main}</div><aside class="today-side">${side}</aside></div>`;
+  }
+
+  /* =========================== 渲染：状态图 + 打卡日历 =========================== */
   function ring(pct, label, status) {
     const r = 24, c = 2 * Math.PI * r;
     return `<span class="ring"><svg viewBox="0 0 56 56" width="56" height="56" aria-hidden="true"><circle class="track" cx="28" cy="28" r="${r}"/><circle class="fill" cx="28" cy="28" r="${r}" stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${(c * (1 - pct)).toFixed(1)}"/></svg><b>${status === 'done' ? '✓' : label}</b></span>`;
   }
-
-  function renderGraph() {
-    const wi = weekInfo();
-    const expected = expectedPhase();
+  function renderGraph(ctx) {
+    const expected = expectedPhase(ctx.t);
     const sel = selectedPhaseId();
     document.getElementById('nodes').innerHTML = PLAN.phases.map(p => {
-      const pr = progress(p); const st = statusOf(p);
+      const st = statusOf(p), pct = ringPct(p);
       const stLabel = st === 'done' ? '已完成' : st === 'active' ? '进行中' : '未开始';
+      const wk = p.closed ? '已完成 · ' + mds(p.closed) : mds(p.from) + '–' + mds(p.to) + ' · ' + p.days.length + ' 天';
       return `<button class="node" type="button" data-phase="${p.id}" data-status="${st}" aria-pressed="${sel === p.id}" title="${esc(p.name)}">
-        ${expected && expected.id === p.id ? '<span class="here">本周</span>' : ''}
-        ${ring(pr.pct, Math.round(pr.pct * 100) + '%', st)}
+        ${expected && expected.id === p.id && !p.closed ? '<span class="here">按日历</span>' : ''}
+        ${ring(pct, Math.round(pct * 100) + '%', st)}
         <span class="nm">${esc(p.short)}</span>
-        <span class="wk">${p.w0 === p.w1 ? 'W' + p.w0 : 'W' + p.w0 + '–' + p.w1} · ${p.hours}h</span>
+        <span class="wk">${esc(wk)}</span>
         <span class="pill ${st} st">${p.code} ${stLabel}</span>
       </button>`;
     }).join('');
+    renderCalendar(ctx);
+  }
 
+  function renderCalendar(ctx) {
+    const t = ctx.t;
+    const first = mondayOf(START);
+    let last = [t, PLAN_END, ctx.endDate].concat(Object.values(state.days)).reduce((a, b) => (b > a ? b : a));
+    last = addDays(mondayOf(last), 6);
+    const cols = Math.floor(diffDays(first, last) / 7) + 1;
+    const phaseIdx = {};
+    PLAN.phases.forEach((p, i) => { phaseIdx[p.id] = i; });
     const cells = [];
-    for (let w = 0; w <= 26; w++) {
-      const p = phaseOfWeek(w);
-      const idx = p ? PLAN.phases.indexOf(p) : 0;
-      const cls = ['cell'];
-      if (p && statusOf(p) === 'done') cls.push('phase-done');
-      else if (wi.week != null && wi.week >= 0 && w < wi.week) cls.push('past');
-      if (wi.week === w) cls.push('now');
-      cells.push(`<span class="${cls.join(' ')}" data-alt="${idx % 2}" title="W${w} · ${p ? esc(p.short) : ''}${weekRange(w) ? ' · ' + weekRange(w) : ''}${weekNote(w) ? ' · ' + esc(weekNote(w)) : ''}">${w}</span>`);
+    ['一', '', '三', '', '五', '末', ''].forEach((l, r) => { if (l) cells.push(`<span class="cal-w" style="grid-row:${r + 2}">${l}</span>`); });
+    // 月份标在该月第一个周一所在的列；和下一个标签相隔不到 3 列就省掉，避免文字重叠
+    const months = [];
+    for (let c = 0; c < cols; c++) {
+      const key = addDays(first, c * 7).slice(0, 7);
+      if (!months.length || months[months.length - 1].key !== key) months.push({ c, key });
     }
-    document.getElementById('strip').innerHTML = cells.join('');
-    document.getElementById('weeksRight').textContent = '第 1 周 ' + PLAN.start + ' → 第 26 周止 ' + PLAN.end;
+    months.filter((m, i) => !months[i + 1] || months[i + 1].c - m.c >= 3).forEach(m => {
+      cells.push(`<span class="cal-m" style="grid-column:${m.c + 2}">${m.key.slice(5) === '01' ? m.key.slice(2, 4) + '年' : ''}${+m.key.slice(5)}月</span>`);
+    });
+    for (let c = 0; c < cols; c++) {
+      const mon = addDays(first, c * 7);
+      for (let r = 0; r < 7; r++) {
+        const d = addDays(mon, r);
+        const cls = ['cc'];
+        let title = md(d) + ' ' + wd(d);
+        let dayId = null;
+        if (d < START && !ctx.byDate[d]) { cls.push('pre'); title = ''; }
+        else if (ctx.byDate[d]) {
+          const ds = ctx.byDate[d];
+          cls.push(ds.length > 1 ? 'done2' : 'done');
+          title += ' · 完成 ' + ds.map(x => 'D' + x.n).join('、') + '：' + ds[0].t;
+          dayId = ds[0].id;
+        } else if (d < t) {
+          const s = ctx.pastState[d] || 'rest';
+          if (s === 'rest') { cls.push(HOLIDAYS[d] && state.rest[d] !== 'on' ? 'hol' : 'rest'); title += ' · ' + restLabel(d); }
+          else if (s === 'covered') { cls.push('covered'); title += ' · 没打卡，但进度不落后'; }
+          else { cls.push('missed'); title += ' · 缺卡'; }
+        } else {
+          const pj = ctx.projByDate[d];
+          if (pj) { cls.push('plan'); if (phaseIdx[pj[0].phase] % 2) cls.push('alt'); title += ' · 预计 D' + pj[0].n + ' ' + pj[0].t; dayId = pj[0].id; }
+          else if (!isStudyDay(d)) { cls.push(HOLIDAYS[d] && state.rest[d] !== 'on' ? 'hol' : 'rest'); title += ' · ' + restLabel(d); }
+          else { cls.push('free'); title += ' · 学习日（逐日任务已排完）'; }
+        }
+        if (d === t) { cls.push('today'); title = '今天 · ' + title; }
+        const pos = `grid-column:${c + 2};grid-row:${r + 2}`;
+        cells.push(dayId
+          ? `<button type="button" class="${cls.join(' ')}" style="${pos}" title="${esc(title)}" aria-label="${esc(title)}" data-action="goto-day" data-day="${dayId}"></button>`
+          : `<span class="${cls.join(' ')}" style="${pos}"${title ? ` title="${esc(title)}"` : ''}></span>`);
+      }
+    }
+    const grid = document.getElementById('cal');
+    grid.style.setProperty('--cols', cols);
+    grid.innerHTML = cells.join('');
+    document.getElementById('calNote').textContent = `${mds(START)} 起 · 已打卡 ${ctx.checkins} 天 · 点有任务的格子跳到那一天`;
+    document.getElementById('calLegend').innerHTML = [
+      ['done', '已打卡'], ['covered', '没打卡但不落后'], ['missed', '缺卡'], ['plan', '预计学习日'], ['plan alt', '预计学习日（相邻阶段）'], ['hol', '节假日'], ['rest', '周末 / 休息'], ['today', '今天']
+    ].map(x => `<span><i class="cc ${x[0]}"></i>${x[1]}</span>`).join('');
   }
 
-  function selectedPhaseId() {
-    if (activeTab === 'auto') return currentPhase().id;
-    if (activeTab === 'jd' || activeTab === 'rhythm') return null;
-    return activeTab;
-  }
-
+  /* =========================== 渲染：标签与面板 =========================== */
+  function selectedPhaseId() { return PLAN.phases.some(p => p.id === activeTab) ? activeTab : null; }
   function renderTabs() {
-    const sel = activeTab === 'auto' ? currentPhase().id : activeTab;
-    const items = PLAN.phases.map(p => `<button class="tab" role="tab" type="button" data-tab="${p.id}" aria-selected="${sel === p.id}"><span class="mini ${statusOf(p)}"></span><span class="code">${p.code}</span>${esc(p.short)}</button>`);
-    items.push(`<button class="tab util" role="tab" type="button" data-tab="jd" aria-selected="${sel === 'jd'}">JD 基准</button>`);
-    items.push(`<button class="tab" role="tab" type="button" data-tab="rhythm" aria-selected="${sel === 'rhythm'}">节奏与原则</button>`);
+    const items = [`<button class="tab lead" role="tab" type="button" data-tab="daily" aria-selected="${activeTab === 'daily'}">逐日计划</button>`];
+    // 已完成的阶段只显示编号，给进行中和后面的阶段留出一行的宽度
+    PLAN.phases.forEach(p => items.push(`<button class="tab" role="tab" type="button" data-tab="${p.id}" aria-selected="${activeTab === p.id}" title="${esc(p.code + ' ' + p.name)}"${p.closed ? ` aria-label="${esc(p.code + ' ' + p.name + '（已完成）')}"` : ''}><span class="mini ${statusOf(p)}"></span><span class="code">${p.code}</span>${p.closed ? '' : esc(p.short)}</button>`));
+    items.push(`<button class="tab util" role="tab" type="button" data-tab="jd" aria-selected="${activeTab === 'jd'}">JD 基准</button>`);
+    items.push(`<button class="tab" role="tab" type="button" data-tab="rhythm" aria-selected="${activeTab === 'rhythm'}">节奏与原则</button>`);
     document.getElementById('tabs').innerHTML = items.join('');
+  }
+
+  function dayState(day, ctx) {
+    if (state.days[day.id]) return 'done';
+    if (ctx.focus.mode === 'todo' && ctx.focus.day && ctx.focus.day.id === day.id) return 'focus';
+    return doneMinutes(day) > 0 || day.k.some((_, i) => state.tasks[day.id + '.' + i]) ? 'part' : 'todo';
+  }
+  function dayRow(day, ctx) {
+    const st = dayState(day, ctx);
+    const done = state.days[day.id];
+    const date = effDate(day, ctx);
+    const base = BASE[day.id];
+    const pills = [];
+    if (st === 'focus') pills.push(pill('solid', '今天'));
+    if (!done) {
+      if (date !== base) pills.push(pill('', '计划 ' + md(base)));
+      const dl = deltaPill(dayDelta(day, ctx)); if (dl) pills.push(dl);
+    } else if (done !== base) pills.push(pill('', '计划 ' + md(base)));
+    if (st === 'part' && doneMinutes(day) > 0) pills.push(pill('active', '★ ' + doneMinutes(day) + '/' + reqMinutes(day) + '′'));
+    if (day.gate) pills.push(pill('accent', '验收'));
+    const key = 'd:' + day.id;
+    const open = key in openState ? openState[key] : st === 'focus';
+    const foot = done
+      ? `<label>完成于 <input class="date-in" type="date" data-donedate="${day.id}" value="${esc(done)}" max="${ctx.t}" aria-label="D${day.n} 完成日期"></label><button class="btn quiet" type="button" data-action="undo-day" data-day="${day.id}">改回未完成</button>`
+      : `<button class="btn${st === 'focus' ? '' : ' ghost'}" type="button" data-action="complete-day" data-day="${day.id}">★ 全部完成</button>`;
+    return `<details class="day" id="day-${day.id}" data-key="${key}" data-st="${st}"${open ? ' open' : ''}>
+      <summary><span class="dst" aria-hidden="true"></span><span class="dwhen"><span class="n">D${day.n}</span>${md(date)} ${wd(date)}${done ? ' 完成' : ''}</span><span class="dtitle">${esc(day.t)}</span><span class="dmeta">${pills.join('')}</span></summary>
+      <div class="day-body">${tasksHtml(day)}${critHtml(day)}${refsHtml(day, 'inline')}<div class="day-foot">${foot}<span>提交时写 <code>checkin: ${day.id.toUpperCase()}</code></span></div></div>
+    </details>`;
+  }
+  function matchFilter(day) {
+    if (dailyFilter === 'todo') return !state.days[day.id];
+    if (dailyFilter === 'done') return !!state.days[day.id];
+    return true;
+  }
+  function renderDaily(ctx) {
+    const cur = currentPhase();
+    const focusPhase = ctx.focus.day ? ctx.focus.day.phase : null;
+    const weekNo = d => Math.floor(diffDays(mondayOf(START), mondayOf(d)) / 7) + 1;
+    const nowWeek = weekNo(ctx.t);
+    const sections = PLAN.phases.filter(p => p.days).map(p => {
+      const dp = dayProgress(p);
+      const rows = [];
+      let lastWeek = 0;
+      p.days.forEach(day => {
+        if (!matchFilter(day)) return;
+        const d = effDate(day, ctx);
+        const w = weekNo(d);
+        if (w > lastWeek) {
+          const mon = mondayOf(d), fri = addDays(mon, 4);
+          rows.push(`<div class="dl-week"><span>第 ${w} 周 · ${md(mon < START ? START : mon)} – ${md(fri)}</span>${w === nowWeek ? '<span class="now">本周</span>' : ''}</div>`);
+          lastWeek = w;
+        }
+        rows.push(dayRow(day, ctx));
+      });
+      if (!rows.length) return '';
+      const last = p.days[p.days.length - 1];
+      const lastDate = effDate(last, ctx);
+      const endPill = dp.done === dp.total
+        ? pill('done', '已于 ' + md(lastDate) + ' 完成')
+        : lastDate !== p.to ? pill(lastDate < p.to ? 'ahead' : 'behind', '按当前进度 ' + md(lastDate) + ' 完成') : '';
+      const key = 'p:' + p.id;
+      const open = key in openState ? openState[key] : (p.id === cur.id || p.id === focusPhase);
+      return `<details class="dl-phase" data-key="${key}"${open ? ' open' : ''}>
+        <summary><span class="chev" aria-hidden="true"></span><div><h3><span class="code">${p.code}</span>${esc(p.name)}</h3>
+          <div class="pmeta">${pill(statusOf(p), dp.done + ' / ' + dp.total + ' 天')}${pill('', '计划 ' + mds(p.from) + ' – ' + mds(p.to))}${p.holNote ? pill('', '含' + p.holNote) : ''}${endPill}</div></div></summary>
+        ${rows.join('')}
+      </details>`;
+    }).join('');
+    const counts = { all: DAYS.length, todo: ctx.pending.length, done: ctx.doneCount };
+    document.getElementById('panel').innerHTML = `
+      <div class="dl-tools">
+        <div class="seg" role="group" aria-label="筛选">${[['all', '全部'], ['todo', '未完成'], ['done', '已完成']].map(x => `<button type="button" data-action="filter" data-filter="${x[0]}" aria-pressed="${dailyFilter === x[0]}">${x[1]} ${counts[x[0]]}</button>`).join('')}</div>
+        <span class="note">共 ${DAYS.length} 个学习日，每天 ★ 120 分钟 · 计划 ${mds(START)} → ${mds(PLAN_END)}</span>
+        ${ctx.focus.day ? `<button class="btn ghost" type="button" data-action="goto-day" data-day="${ctx.focus.day.id}">定位到${ctx.focus.mode === 'todo' ? '今天' : '下一天'}</button>` : ''}
+      </div>
+      ${sections || '<p class="empty">没有符合筛选的任务。</p>'}`;
   }
 
   function checkItem(id, text, hint) {
     const on = !!state.done[id];
     return `<li><label class="item${on ? ' checked' : ''}"><input type="checkbox" data-id="${id}"${on ? ' checked' : ''}><span class="t">${esc(text)}${hint ? `<span class="hint">${esc(hint)}</span>` : ''}</span></label></li>`;
   }
-
-  function renderPhase(p) {
+  function renderPhase(p, ctx) {
     const pr = progress(p); const dl = delivProgress(p); const st = statusOf(p);
     const tDone = p.topics.filter((_, i) => state.done[p.id + '.t' + i]).length;
     const rDone = p.resources.filter((_, i) => state.done[p.id + '.r' + i]).length;
     const vDone = p.videos.filter((_, i) => state.done[p.id + '.v' + i]).length;
     const jdTags = p.jd.map(t => `<span class="jd-tag${/必备/.test(t) ? ' must' : ''}">${esc(t)}</span>`).join('');
     const review = state.reviewed[p.id] || '';
+    const dp = p.days ? dayProgress(p) : null;
+    const span = p.days ? mds(p.from) + ' – ' + mds(p.to) + ' · ' + p.days.length + ' 个学习日' : mds(p.from) + ' – ' + mds(p.to);
+    const notes = [p.note, p.holNote ? '含' + p.holNote + '，不排任务。' : ''].filter(Boolean).join(' ');
 
     const resList = p.resources.length ? `<ul class="res">${p.resources.map((r, i) => {
       const id = p.id + '.r' + i; const on = !!state.done[id];
       return `<li class="${on ? 'checked' : ''}"><label class="rrow"><input type="checkbox" data-id="${id}" aria-label="已读：${esc(r[0])}"${on ? ' checked' : ''}><div><div class="rt"><a href="${r[1]}" target="_blank" rel="noopener">${esc(r[0])}</a><span class="chip">${TYPE_ZH[r[2]] || r[2]}</span><span class="chip ${r[3] === 'ZH' ? 'zh' : 'en'}">${r[3]}</span></div>${r[4] ? `<div class="rn">${esc(r[4])}</div>` : ''}</div></label></li>`;
     }).join('')}</ul>` : '<p class="empty">本阶段没有额外资料。</p>';
-
     const vidList = p.videos.length ? `<ul class="res vid">${p.videos.map((v, i) => {
       const id = p.id + '.v' + i; const on = !!state.done[id];
       return `<li class="${on ? 'checked' : ''}"><label class="rrow"><input type="checkbox" data-id="${id}" aria-label="已看：${esc(v[0])}"${on ? ' checked' : ''}><div><div class="rt"><a href="${v[2]}" target="_blank" rel="noopener">${esc(v[0])}</a><span class="chip ${v[3] === 'ZH' ? 'zh' : 'en'}">${v[3] === 'ZH' ? '中文' : 'EN'}</span>${v[4] ? `<span class="chip len">${esc(v[4])}</span>` : ''}</div><div class="rn"><span class="ch">${esc(v[1])}</span>${v[5] ? ' · ' + esc(v[5]) : ''}</div></div></label></li>`;
     }).join('')}</ul>` : '<p class="empty">准备周不需要看视频，把环境配好就是最好的学习。</p>';
-
     const proj = p.project ? `<div class="proj">
         <p class="pn"><span class="code">${p.project.code}</span>${esc(p.project.name)}</p>
         <p>${esc(p.project.desc)}</p>
         <ol>${p.project.build.map(b => `<li>${esc(b)}</li>`).join('')}</ol>
       </div>` : '<p class="empty">准备周没有里程碑项目；产出就是一个能跑的环境和仓库骨架。</p>';
+    const dayList = p.days ? `<section class="block">
+        <h3>逐日任务 <span class="cnt">${dp.done} / ${dp.total} 天</span></h3>
+        <p class="lead">日期是当前的预计日期（已完成的显示完成日）；点一天到「逐日计划」里打卡。</p>
+        <ul class="plist">${p.days.map(day => {
+          const s = dayState(day, ctx); const d = effDate(day, ctx);
+          return `<li><button type="button" data-action="goto-day" data-day="${day.id}"><span class="dot ${s}"></span><span class="w">D${day.n} · ${md(d)} ${wd(d)}</span><span class="tt${s === 'done' ? ' done' : ''}">${esc(day.t)}${day.gate ? ' · 验收' : ''}</span></button></li>`;
+        }).join('')}</ul>
+      </section>` : '';
 
     document.getElementById('panel').innerHTML = `
       <div class="phead">
@@ -1029,21 +2088,20 @@
           <h2><span class="code">${p.code}</span>${esc(p.name)}</h2>
           <div class="meta">
             <span class="pill ${st}">${st === 'done' ? '已完成' : st === 'active' ? '进行中' : '未开始'}</span>
-            <span class="pill">${p.w0 === p.w1 ? '第 ' + p.w0 + ' 周' : '第 ' + p.w0 + '–' + p.w1 + ' 周'}</span>
-            ${p.span ? `<span class="pill accent">${esc(p.span)}</span>` : ''}
-            <span class="pill">≈ ${p.hours} 小时${esc(p.hoursNote || '')}</span>
+            <span class="pill accent">${esc(span)}</span>
+            <span class="pill">≈ ${p.hours} 小时</span>
           </div>
           <p class="goal">${esc(p.goal)}</p>
-          ${p.note ? `<p class="goal">📌 ${esc(p.note)}</p>` : ''}
+          ${notes ? `<p class="pnote">${esc(notes)}</p>` : ''}
           ${jdTags ? `<div class="jd-tags">${jdTags}</div>` : ''}
         </div>
         <aside class="pside">
+          ${dp ? `<div class="row"><span>逐日任务</span><b>${dp.done} / ${dp.total} 天</b></div><div class="bar${dp.done === dp.total ? ' done' : ''}" style="margin:8px 0 12px"><i style="width:${dp.pct * 100}%"></i></div>` : ''}
           <div class="row"><span>清单完成率</span><b>${Math.round(pr.pct * 100)}%（${pr.done}/${pr.total}）</b></div>
-          <div class="bar${st === 'done' ? ' done' : ''}" style="margin:8px 0 12px"><i style="width:${pr.pct * 100}%"></i></div>
           <div class="row"><span>验收成果</span><b>${dl.done} / ${dl.total}</b></div>
           <div class="row"><span>学习内容</span><b>${tDone} / ${p.topics.length}</b></div>
           <div class="row"><span>资料 · 视频</span><b>${rDone} / ${p.resources.length} · ${vDone} / ${p.videos.length}</b></div>
-          <div class="row"><span>验收日期${p.accept ? `<small style="color:var(--ink-3)"> · 计划 ${esc(p.accept)}</small>` : ''}</span><input type="date" data-review="${p.id}" value="${esc(review)}"></div>
+          <div class="row"><span>验收日期<small style="color:var(--ink-3)"> · 计划 ${mds(p.to)}</small></span><input type="date" data-review="${p.id}" value="${esc(review)}" aria-label="${p.code} 实际验收日期"></div>
         </aside>
       </div>
       <div class="cols">
@@ -1064,6 +2122,7 @@
           </section>
         </div>
         <div class="col">
+          ${dayList}
           <section class="block">
             <h3>权威资料 <span class="cnt">${rDone} / ${p.resources.length}</span></h3>
             <p class="lead">官方文档、原始论文与一手文章；勾选表示已读。</p>
@@ -1093,30 +2152,80 @@
         <tbody>${rows}</tbody>
       </table></div>
       <h3>怎么用这张表</h3>
-      <p>每个月末验收时，回到这里对照一次：这一项 JD 技能，我现在能不能拿出一个项目、一个数字、一篇笔记来证明？三样里缺哪样，下个月的输出就补哪样。"必备"三项到 M4 结束时必须全部有作品集证据；两个"新兴"项在 M5 补齐。</p>
+      <p>每个阶段验收时，回到这里对照一次：这一项 JD 技能，我现在能不能拿出一个项目、一个数字、一篇笔记来证明？三样里缺哪样，下一阶段的输出就补哪样。"必备"三项到 M4 结束时必须全部有作品集证据；两个"新兴"项在 M5 补齐。</p>
+    </div>`;
+  }
+
+  function restSettingsHtml() {
+    const groups = HOLIDAY_GROUPS.map(g => `<div class="hol-row"><span class="nm">${g[0]}</span><div class="hol-list">${g[1].map(d => {
+      const on = state.rest[d] === 'on';
+      return `<button class="hol-chip" type="button" data-action="toggle-hol" data-date="${d}" data-on="${on ? 1 : 0}" title="${on ? '已改为学习日，点一下恢复休息' : '点一下改为学习日'}">${md(d)} ${wd(d)}</button>`;
+    }).join('')}</div></div>`).join('');
+    const custom = Object.keys(state.rest).filter(d => !HOLIDAYS[d]).sort();
+    return `<div class="restbox">
+      ${groups}
+      <div class="hol-row"><span class="nm">自定义</span><div>
+        ${custom.length ? `<ul class="custom-list">${custom.map(d => `<li>${d.slice(2)} ${wd(d)} · ${state.rest[d] === 'off' ? '休息' : '学习'}<button type="button" data-action="rest-clear" data-date="${d}" aria-label="撤销 ${d}">撤销</button></li>`).join('')}</ul>` : '<p class="empty" style="padding:3px 0">还没有自定义的日期。</p>'}
+        <div class="rest-form" style="margin-top:8px">
+          <input class="date-in" type="date" id="restDate" aria-label="要调整的日期">
+          <button class="btn ghost" type="button" data-action="rest-off">设为休息日</button>
+          <button class="btn quiet" type="button" data-action="rest-on">设为学习日</button>
+          <span class="rest-msg" id="restMsg" role="status"></span>
+        </div>
+      </div></div>
     </div>`;
   }
 
   function renderRhythm() {
     document.getElementById('panel').innerHTML = `<div class="doc">
       <h2>节奏与原则</h2>
-      <p class="intro">工作日每天 2 小时怎么分、周末怎么用、落后了怎么办，以及三条贯穿始终的原则和七个资深研发容易踩的坑。逐日任务和打卡在 docs/plan/，本页看阶段验收。</p>
+      <p class="intro">工作日每天 2 小时，周末和法定节假日不排任务。每天的任务和打卡在「逐日计划」和页面顶部的「今日任务」里；这一页讲规则、落后时的处理和休息日设置。</p>
+      <h3>每天怎么打卡</h3>
       <div class="tbl-wrap"><table>
-        <thead><tr><th>时段</th><th>时长</th><th>内容</th></tr></thead>
+        <thead><tr><th>时段</th><th>时长</th><th>做法</th></tr></thead>
         <tbody>
-          <tr><td class="nowrap">周一</td><td class="nowrap mono">2 h</td><td>输入与立项：带着当周项目的具体问题读文档，写 spec、设计或评测用例草案，不做无目标的通读。</td></tr>
-          <tr><td class="nowrap">周二 – 周四</td><td class="nowrap mono">2 h / 天</td><td>动手：项目代码。每天有可验证的完成标准（一次 commit、一段输出或一个数字），拿不出证据就不打勾。</td></tr>
-          <tr><td class="nowrap">周五</td><td class="nowrap mono">2 h</td><td>收尾、跑评测、看 trace；最后 20 分钟写周复盘。</td></tr>
-          <tr><td class="nowrap">周末</td><td class="nowrap mono">不排新任务</td><td>先补欠账（周六、周日各最多 2 h），补完再做该周的拓展思考题；不打卡。</td></tr>
+          <tr><td class="nowrap">开始</td><td class="nowrap mono">5 分钟</td><td>打开页面看「今日任务」。★ 是必做，合计 120 分钟；☆ 是选做，做不做都不影响当天算不算完成。</td></tr>
+          <tr><td class="nowrap">进行</td><td class="nowrap mono">约 110 分钟</td><td>按顺序做，做完一项勾一项。「完成标准」是证据：一次提交、一段输出或一个数字，拿不出来就不勾。</td></tr>
+          <tr><td class="nowrap">收尾</td><td class="nowrap mono">5 分钟</td><td>★ 全部勾完，当天自动记为完成并记下日期。提交代码时写 <code>checkin: M2-01</code> 这样的编号，提交历史就是出勤记录。</td></tr>
+          <tr><td class="nowrap">状态很差的一天</td><td class="nowrap mono">≤ 30 分钟</td><td>只做第一个 ★ 并提交，其余留到下一个学习日。保持连续比做满更重要。</td></tr>
         </tbody>
       </table></div>
-      <h3>周复盘模板（每周最后一个工作日填，位置：docs/plan/ 当月文件里该周的末尾）</h3>
-<pre>第 N 周复盘
-- 本周 ★ 全部完成的天数：___ / ___　欠账：___ h
+      <h3>日期怎么自动更新</h3>
+      <ul class="anti">
+        <li><b>计划日期固定。</b>每一天的「计划日期」是 10/29 重排时按工作日（跳过周末与节假日）排好的，之后不再变化；M2–M6 的阶段日期和验收日也是计划日期。</li>
+        <li><b>预计日期滚动。</b>还没完成的任务从今天起按顺序排到学习日上；今天已经完成一天的话，从下一个学习日排起。</li>
+        <li><b>提前完成。</b>今天的做完还有余力，就接着做下一天。勾完它也记为今天完成，后面所有任务的预计日期自动往前挪，页面显示「提前 N 天」。</li>
+        <li><b>没做完。</b>没完成的任务自动顺延到下一个学习日，页面显示「推迟 N 天」，打卡日历里那天标成缺卡。不用周末补，按下面的表处理。</li>
+        <li><b>补打卡。</b>做了但忘了勾：勾完后把「完成于」改成实际那天。凌晨 4 点前打卡算前一天。</li>
+      </ul>
+      <h3>推迟了怎么办</h3>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>推迟</th><th>动作</th></tr></thead>
+        <tbody>
+          <tr><td class="nowrap mono">1 – 2 天</td><td>正常，按顺序做，不加班。</td></tr>
+          <tr><td class="nowrap mono">3 – 5 天</td><td>☆ 选做项全部跳过。</td></tr>
+          <tr><td class="nowrap mono">6 – 10 天</td><td>启用「削减阶梯」，从第 1 级开始，够了就停。</td></tr>
+          <tr><td class="nowrap mono">&gt; 10 天，或连续 5 个学习日没打卡</td><td>停止硬追：整体顺延，不压缩，回来重排日程。</td></tr>
+        </tbody>
+      </table></div>
+      <h3>削减阶梯（每一级都会降低一项验收标准，用了就在验收日写明「已降级」）</h3>
+      <ul class="anti">
+        <li><b>1 级：</b>所有 ☆ 项，对验收没有影响。</li>
+        <li><b>2 级：</b>M2-18 的 LlamaIndex 实现改为读文档、写对照（约省 1.5 h）。</li>
+        <li><b>3 级：</b>M4-17、M4-18 的 Swarm 完整实现改为一个 handoff 小 demo（约省 2 h）。</li>
+        <li><b>4 级：</b>M6-15 的 CrewAI / AutoGPT 实验改为读文档写取舍（约省 1.5 h）。</li>
+        <li><b>5 级：</b>M5 评测集从 150 条降到 100 条，M5-07、M5-08 各少写 25 条（约省 1.5 h）。</li>
+      </ul>
+      <p>被砍的那天照样打卡，做降级后的版本。不能砍：Milvus + ES 双实现与混合检索 + Rerank + Ragas；LangGraph 持久化与 interrupt；3 个 MCP Server；Judge 校准；CI 回归；P6 一键部署。这些是简历上的数字来源。整体提前时，把多出来的时间投到 M5（评测与上下文工程），那是投入产出比最高的部分。</p>
+      <h3>休息日与假期</h3>
+      <p>默认按下表不排任务。2027 年的官方放假安排公布后，在这里按实际日期调整；临时有事请假，也在这里加一天休息日。改动只影响预计日期，计划日期和阶段日期不变。</p>
+      ${restSettingsHtml()}
+      <h3>每周回顾（可选，周五花 10 分钟写进 journal/）</h3>
+<pre>第 N 周回顾
+- 本周完成 ___ 天（看页面顶部「逐日进度」），提前 / 推迟 ___ 天
 - 一个数字（本周项目里能量化的一个结果）：
 - 一个坑（踩了什么、怎么解决）：
-- 一个问题（还没想明白的，下周优先解决）：
-- 周末：先补欠账；补完有余力 → 拓展思考：…</pre>
+- 一个问题（还没想明白的，下周优先解决）：</pre>
       <h3>三条原则</h3>
       <div class="principles">
         <div class="principle"><b>项目驱动，评测先行</b><p>每个项目在写 Agent 之前先写 10 条测试用例。能不能说出"改了 X 之后指标从 71% 到 84%"，是档位的分水岭。</p></div>
@@ -1133,131 +2242,170 @@
         <li><b>忽视成本与安全。</b>从 P1 起记成本，从 P3 起做工具权限最小化和 prompt injection 防护。</li>
         <li><b>用老经验硬套。</b>状态机思维是优势，但"断言相等"式的测试思维要换成"评分与阈值"。</li>
       </ul>
-      <h3>落后了怎么办</h3>
-      <p>欠账 = 未完成的 ★ 分钟数（★ 是每天必做的 120 分钟，☆ 是可选）。每周日晚结算一次。</p>
-      <div class="tbl-wrap"><table>
-        <thead><tr><th>欠账</th><th>动作</th></tr></thead>
-        <tbody>
-          <tr><td class="nowrap mono">0 – 3 h</td><td>下周按计划走；欠账写进周复盘，下个周末继续补。</td></tr>
-          <tr><td class="nowrap mono">3 – 6 h</td><td>之后所有 ☆ 全部不做；下个周末必须清到 3 h 以下。</td></tr>
-          <tr><td class="nowrap mono">6 – 10 h</td><td>启用「削减阶梯」，从第 1 级开始，够了就停。</td></tr>
-          <tr><td class="nowrap mono">&gt; 10 h，或连续 3 个工作日零打卡</td><td>停止硬追：整体顺延，不压缩，回来重排日程。</td></tr>
-        </tbody>
-      </table></div>
-      <h3>削减阶梯（每一级都会降低一项验收标准，用了就在验收日写明「已降级」）</h3>
-      <ul class="anti">
-        <li><b>1 级：</b>所有 ☆ 项，对验收没有影响。</li>
-        <li><b>2 级：</b>M2 的 LlamaIndex 实现改为只读文档做对照（约省 3–4 h）。</li>
-        <li><b>3 级：</b>M4 的 Swarm 完整实现改为一个 handoff 小 demo（约省 4–5 h）。</li>
-        <li><b>4 级：</b>M6 的 CrewAI / AutoGPT 实验改为读文档写取舍（约省 2 h）。</li>
-        <li><b>5 级：</b>M5 评测集从 150 条降到 100 条（约省 4 h）。</li>
-      </ul>
-      <p>不能砍：手写 tool loop；Milvus + ES 双实现与混合检索 + Rerank + Ragas；LangGraph 持久化与 interrupt；3 个 MCP Server；Judge 校准；CI 回归；P6 一键部署。这些是简历上的数字来源。整体提前时，把多出来的时间投到 M5（评测与上下文工程），那是投入产出比最高的部分。</p>
     </div>`;
   }
 
-  function renderPanel() {
-    const sel = activeTab === 'auto' ? currentPhase().id : activeTab;
-    if (sel === 'jd') renderJd();
-    else if (sel === 'rhythm') renderRhythm();
-    else renderPhase(PLAN.phases.find(p => p.id === sel) || currentPhase());
+  function renderPanel(ctx) {
+    if (activeTab === 'daily') renderDaily(ctx);
+    else if (activeTab === 'jd') renderJd();
+    else if (activeTab === 'rhythm') renderRhythm();
+    else renderPhase(phaseById(activeTab) || currentPhase(), ctx);
   }
 
-  function render() {
-    renderStats();
-    renderGraph();
+  // 重渲染前记住哪些折叠面板开着、操作的元素在屏幕上的位置，渲染后还原，页面不跳
+  function captureOpen() {
+    document.querySelectorAll('details[data-key]').forEach(d => { openState[d.dataset.key] = d.open; });
+  }
+  function anchorOf(el) {
+    if (!el || !el.dataset) return null;
+    let sel = null;
+    if (el.dataset.task) sel = `[data-task="${el.dataset.task}"]`;
+    else if (el.dataset.id) sel = `[data-id="${el.dataset.id}"]`;
+    else if (el.dataset.action && el.dataset.day) sel = `[data-action="${el.dataset.action}"][data-day="${el.dataset.day}"]`;
+    if (!sel) return null;
+    const scope = el.closest('#today') ? '#today ' : el.closest('#panel') ? '#panel ' : '';
+    return { sel: scope + sel, top: el.getBoundingClientRect().top, focus: el === document.activeElement };
+  }
+  function render(anchorEl, keepOpenState) {
+    const anchor = anchorOf(anchorEl);
+    if (!keepOpenState) captureOpen();
+    const ctx = computeCtx();
+    lastDay = ctx.t;
+    renderStats(ctx);
+    renderToday(ctx);
+    renderGraph(ctx);
     renderTabs();
-    renderPanel();
-  }
-
-  function visiblePhase() {
-    const sel = activeTab === 'auto' ? currentPhase().id : activeTab;
-    return PLAN.phases.find(p => p.id === sel) || null;
-  }
-
-  // 只刷新当前阶段面板里的计数、进度条和状态标签，不重建清单
-  function refreshCounters(p) {
-    const aside = document.querySelector('.pside');
-    if (!aside || !document.querySelector('.phead h2 .code') || document.querySelector('.phead h2 .code').textContent !== p.code) return;
-    const pr = progress(p); const dl = delivProgress(p);
-    const tDone = p.topics.filter((_, i) => state.done[p.id + '.t' + i]).length;
-    const rDone = p.resources.filter((_, i) => state.done[p.id + '.r' + i]).length;
-    const vDone = p.videos.filter((_, i) => state.done[p.id + '.v' + i]).length;
-    const bs = aside.querySelectorAll('.row b');
-    if (bs.length >= 4) {
-      bs[0].textContent = Math.round(pr.pct * 100) + '%（' + pr.done + '/' + pr.total + '）';
-      bs[1].textContent = dl.done + ' / ' + dl.total;
-      bs[2].textContent = tDone + ' / ' + p.topics.length;
-      bs[3].textContent = rDone + ' / ' + p.resources.length + ' · ' + vDone + ' / ' + p.videos.length;
+    renderPanel(ctx);
+    document.getElementById('footSched').textContent = `计划日期按 ${START} 起的工作日排定，终点 ${PLAN_END}；预计日期随打卡滚动。`;
+    if (anchor) {
+      const el = document.querySelector(anchor.sel);
+      if (el) {
+        const dy = el.getBoundingClientRect().top - anchor.top;
+        if (Math.abs(dy) > 1) window.scrollBy(0, dy);
+        if (anchor.focus) { try { el.focus({ preventScroll: true }); } catch (e) { /* ignore */ } }
+      }
     }
-    const bar = aside.querySelector('.bar');
-    if (bar) { bar.classList.toggle('done', statusOf(p) === 'done'); bar.querySelector('i').style.width = (pr.pct * 100) + '%'; }
-    const cnts = document.querySelectorAll('.block h3 .cnt');
-    if (cnts.length === 4) { cnts[0].textContent = tDone + ' / ' + p.topics.length; cnts[1].textContent = dl.done + ' / ' + dl.total; cnts[2].textContent = rDone + ' / ' + p.resources.length; cnts[3].textContent = vDone + ' / ' + p.videos.length; }
-    const pill = document.querySelector('.phead .meta .pill'); const st = statusOf(p);
-    if (pill) { pill.className = 'pill ' + st; pill.textContent = st === 'done' ? '已完成' : st === 'active' ? '进行中' : '未开始'; }
-  }
-
-  // 云端状态到达时就地更新页面：勾选框、日期、统计，不销毁正在操作的 DOM
-  function syncDom() {
-    document.querySelectorAll('input[type="checkbox"][data-id]').forEach(cb => {
-      const on = !!state.done[cb.dataset.id];
-      if (cb.checked !== on) cb.checked = on;
-      const wrap = cb.closest('.item, li');
-      if (wrap) wrap.classList.toggle('checked', on);
-    });
-    document.querySelectorAll('input[data-review]').forEach(i => { i.value = state.reviewed[i.dataset.review] || ''; });
-    renderStats(); renderGraph(); renderTabs();
-    const p = visiblePhase(); if (p) refreshCounters(p);
   }
 
   /* =========================== 事件 =========================== */
+  function updateDayDone(day) {
+    const all = reqTasks(day).every(i => state.tasks[day.id + '.' + i]);
+    if (all && !state.days[day.id]) state.days[day.id] = todayStr();
+    if (!all && state.days[day.id]) delete state.days[day.id];
+  }
+  function gotoDay(id) {
+    const day = DAY_BY_ID[id]; if (!day) return;
+    activeTab = 'daily'; rememberTab();
+    if (!matchFilter(day)) { dailyFilter = 'all'; rememberFilter(); }
+    captureOpen();
+    openState['p:' + day.phase] = true;
+    openState['d:' + id] = true;
+    render(null, true);
+    const el = document.getElementById('day-' + id);
+    if (el) {
+      const smooth = !window.matchMedia || !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      el.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' });
+    }
+  }
+  function setRest(date, val) {
+    if (!parseDate(date)) return false;
+    if (val === null) delete state.rest[date];
+    else if ((val === 'off' && !isBaseWorkday(date)) || (val === 'on' && isBaseWorkday(date))) delete state.rest[date]; // 和默认一致，不用存
+    else state.rest[date] = val;
+    return true;
+  }
+
   document.addEventListener('change', e => {
     const t = e.target;
-    if (t.matches('input[type="checkbox"][data-id]')) {
+    if (t.matches('input[data-task]')) {
+      const id = t.dataset.task;
+      if (t.checked) state.tasks[id] = true; else delete state.tasks[id];
+      updateDayDone(DAY_BY_ID[id.slice(0, id.lastIndexOf('.'))]);
+      touch(); render(t);
+    } else if (t.matches('input[data-id]')) {
       const id = t.dataset.id;
-      const p = PLAN.phases.find(x => id.startsWith(x.id + '.'));
-      // 一旦开始勾选，就把标签固定在这个阶段，完成后不会自动跳到下一阶段
-      if (activeTab === 'auto' && p) { activeTab = p.id; rememberTab(); }
       if (t.checked) state.done[id] = true; else delete state.done[id];
-      const wrap = t.closest('.item, li');
-      if (wrap) wrap.classList.toggle('checked', t.checked);
-      touch();
-      renderStats(); renderGraph(); renderTabs();
-      if (p) refreshCounters(p);
+      touch(); render(t);
     } else if (t.matches('input[data-review]')) {
       const pid = t.dataset.review;
       if (t.value) state.reviewed[pid] = t.value; else delete state.reviewed[pid];
       touch();
+    } else if (t.matches('input[data-donedate]')) {
+      const id = t.dataset.donedate;
+      if (parseDate(t.value) && t.value <= todayStr()) { state.days[id] = t.value; touch(); render(t); }
+      else t.value = state.days[id] || '';
     }
   });
 
   document.addEventListener('click', e => {
+    const a = e.target.closest('[data-action]');
+    if (a) {
+      const act = a.dataset.action, id = a.dataset.day;
+      if (act === 'complete-day') {
+        const day = DAY_BY_ID[id];
+        reqTasks(day).forEach(i => { state.tasks[id + '.' + i] = true; });
+        if (!state.days[id]) state.days[id] = todayStr();
+        if (peekId === id) peekId = null;
+        touch(); render(a);
+      } else if (act === 'undo-day') {
+        const day = DAY_BY_ID[id];
+        reqTasks(day).forEach(i => { delete state.tasks[id + '.' + i]; });
+        delete state.days[id];
+        touch(); render(a);
+      } else if (act === 'peek') { peekId = id; render(a); }
+      else if (act === 'unpeek') { peekId = null; render(a); }
+      else if (act === 'goto-day') { e.preventDefault(); gotoDay(id); }
+      else if (act === 'filter') { dailyFilter = a.dataset.filter; rememberFilter(); render(); }
+      else if (act === 'toggle-hol') {
+        const d = a.dataset.date;
+        setRest(d, state.rest[d] === 'on' ? null : 'on');
+        touch(); render();
+      } else if (act === 'rest-off' || act === 'rest-on') {
+        const input = document.getElementById('restDate');
+        const v = input && input.value;
+        if (!parseDate(v)) { const m = document.getElementById('restMsg'); if (m) m.textContent = '先选一个日期。'; return; }
+        setRest(v, act === 'rest-off' ? 'off' : 'on');
+        touch(); render();
+      } else if (act === 'rest-clear') {
+        setRest(a.dataset.date, null);
+        touch(); render();
+      }
+      return;
+    }
     const node = e.target.closest('.node[data-phase]');
-    if (node) { activeTab = node.dataset.phase; rememberTab(); renderGraph(); renderTabs(); renderPanel(); document.getElementById('tabs').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+    if (node) { activeTab = node.dataset.phase; rememberTab(); render(); document.getElementById('tabs').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
     const tab = e.target.closest('.tab[data-tab]');
-    if (tab) { activeTab = tab.dataset.tab; rememberTab(); renderGraph(); renderTabs(); renderPanel(); return; }
+    if (tab) { activeTab = tab.dataset.tab; rememberTab(); render(); return; }
     if (e.target.id === 'reset') {
       const btn = e.target;
       if (btn.dataset.armed === '1') {
-        state = { done: {}, startDate: state.startDate, reviewed: {}, updatedAt: '' };
+        state = Object.assign(blankState(), { startDate: state.startDate });
+        peekId = null;
         touch(); render();
         btn.dataset.armed = ''; btn.textContent = '重置全部进度'; btn.classList.remove('warn');
       } else {
-        btn.dataset.armed = '1'; btn.textContent = '再点一次确认清空所有勾选'; btn.classList.add('warn');
+        btn.dataset.armed = '1'; btn.textContent = '再点一次确认清空所有勾选和打卡'; btn.classList.add('warn');
         setTimeout(() => { btn.dataset.armed = ''; btn.textContent = '重置全部进度'; btn.classList.remove('warn'); }, 4000);
       }
     }
   });
 
   function rememberTab() { try { localStorage.setItem(LS_TAB, activeTab); } catch (e) { /* ignore */ } }
+  function rememberFilter() { try { localStorage.setItem(LS_VIEW, dailyFilter); } catch (e) { /* ignore */ } }
 
   /* =========================== 启动 =========================== */
   const local = loadLocal();
   if (local) state = local;
-  try { const t = localStorage.getItem(LS_TAB); if (t && (t === 'jd' || t === 'rhythm' || PLAN.phases.some(p => p.id === t))) activeTab = t; } catch (e) { /* ignore */ }
+  try {
+    const t = localStorage.getItem(LS_TAB);
+    if (t && (t === 'daily' || t === 'jd' || t === 'rhythm' || PLAN.phases.some(p => p.id === t))) activeTab = t;
+    const f = localStorage.getItem(LS_VIEW);
+    if (f === 'all' || f === 'todo' || f === 'done') dailyFilter = f;
+  } catch (e) { /* ignore */ }
   render();
   initDb();
+  // 页面一直开着跨过凌晨 4 点时，自动换到新的一天
+  setInterval(() => { if (todayStr() !== lastDay) render(); }, 60000);
 })();
 </script>
 </body>
