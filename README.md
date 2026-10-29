@@ -1,6 +1,6 @@
 # langgraph-learn
 
-智能体学习项目，路线见 [学习蓝图](docs/AI智能体研发学习蓝图-6个月.md)；模块划分见 [ARCHITECTURE.md](ARCHITECTURE.md)。
+智能体学习项目，路线见 [学习蓝图](docs/AI智能体研发学习蓝图-6个月.md)；每日打卡见 [docs/plan](docs/plan/README.md)（`python3 scripts/checkin.py` 看今日任务与欠账）；模块划分见 [ARCHITECTURE.md](ARCHITECTURE.md)。
 
 ## 评测
 
