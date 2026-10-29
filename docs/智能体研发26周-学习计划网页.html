@@ -258,7 +258,7 @@
 
   /* ---------- footer ---------- */
   .foot { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; align-items: center; font-size: 13px; color: var(--ink-3); }
-  .foot label { display: inline-flex; align-items: center; gap: 8px; color: var(--ink-2); }
+  .foot .sched { color: var(--ink-2); }
   .foot input[type="date"] { font: inherit; font-family: var(--font-mono); font-size: 12.5px; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; }
   .btn-ghost { background: transparent; border: 1px solid var(--line); border-radius: 6px; padding: 5px 10px; font-size: 12.5px; color: var(--ink-2); cursor: pointer; }
   .btn-ghost:hover { border-color: var(--line-strong); color: var(--ink); }
@@ -271,9 +271,9 @@
 <div class="page">
   <header class="top">
     <div>
-      <p class="eyebrow">langGraph-learn · 6 个月学习计划</p>
+      <p class="eyebrow">langGraph-learn · 2026-10-29 重排版</p>
       <h1>智能体研发 26 周</h1>
-      <p class="sub">Python · <b>LangGraph</b> 主线 · 对标大厂 JD · 每周 8–12 小时 · 六个里程碑项目</p>
+      <p class="sub">Python · <b>LangGraph</b> 主线 · 对标大厂 JD · 工作日每天 2 小时 · 终点 2027-04-30 · 六个里程碑项目</p>
     </div>
     <div class="save" id="save" data-mode="init"><span class="dot"></span><span id="saveText">Checkpoint · 载入中</span></div>
   </header>
@@ -296,7 +296,7 @@
   <main class="panel" id="panel"></main>
 
   <footer class="foot">
-    <label>计划开始日期（第 1 周周一）<input type="date" id="startDate"></label>
+    <span class="sched">日程 2026-10-29 起 · 工作日每天 2 小时 · 逐日打卡见 docs/plan/</span>
     <span id="footNote">勾选即保存；同一账号在其他设备打开会同步。</span>
     <button class="btn-ghost" id="reset" type="button">重置全部进度</button>
   </footer>
@@ -309,10 +309,40 @@
   /* =========================== 数据 =========================== */
   // resources: [name, url, type, lang, note]; videos: [title, channel, url, lang, length, why]
   const PLAN = {
-    start: '2026-09-14',
+    start: '2026-10-29',
+    end: '2027-04-30',
+    // 日程表（2026-10-29 重排）：[周, 起, 止, 多数工作日所属阶段, 备注]；相邻两周首尾相接，假期并入前一周
+    weeks: [
+      [1, '2026-10-29', '2026-11-01', 'm1', ''],
+      [2, '2026-11-02', '2026-11-08', 'm1', ''],
+      [3, '2026-11-09', '2026-11-15', 'm1', ''],
+      [4, '2026-11-16', '2026-11-22', 'm2', ''],
+      [5, '2026-11-23', '2026-11-29', 'm2', ''],
+      [6, '2026-11-30', '2026-12-06', 'm2', ''],
+      [7, '2026-12-07', '2026-12-13', 'm2', ''],
+      [8, '2026-12-14', '2026-12-20', 'm3', ''],
+      [9, '2026-12-21', '2026-12-27', 'm3', ''],
+      [10, '2026-12-28', '2027-01-03', 'm3', '元旦 01-01 不排任务'],
+      [11, '2027-01-04', '2027-01-10', 'm3', ''],
+      [12, '2027-01-11', '2027-01-17', 'm4', 'M3 验收 01-12，M4 起步'],
+      [13, '2027-01-18', '2027-01-24', 'm4', ''],
+      [14, '2027-01-25', '2027-01-31', 'm4', ''],
+      [15, '2027-02-01', '2027-02-14', 'm4', '春节假期 02-05 – 02-12 不排任务'],
+      [16, '2027-02-15', '2027-02-21', 'm4', ''],
+      [17, '2027-02-22', '2027-02-28', 'm4', 'M4 验收 02-24，M5 起步'],
+      [18, '2027-03-01', '2027-03-07', 'm5', ''],
+      [19, '2027-03-08', '2027-03-14', 'm5', ''],
+      [20, '2027-03-15', '2027-03-21', 'm5', ''],
+      [21, '2027-03-22', '2027-03-28', 'm5', ''],
+      [22, '2027-03-29', '2027-04-05', 'm5', 'M5 验收 03-31；清明 04-05 不排任务'],
+      [23, '2027-04-06', '2027-04-11', 'm6', ''],
+      [24, '2027-04-12', '2027-04-18', 'm6', ''],
+      [25, '2027-04-19', '2027-04-25', 'm6', ''],
+      [26, '2027-04-26', '2027-04-30', 'm6', ''],
+    ],
     phases: [
       {
-        id: 'm0', code: 'M0', name: '准备周', short: '准备周', w0: 0, w1: 0, hours: 6,
+        id: 'm0', code: 'M0', name: '准备周', short: '准备周', w0: 0, w1: 0, hours: 6, from: '2026-09-14', to: '2026-10-28',
         goal: '环境、仓库、模型 API、账号与规范就绪，从第一天起就按项目化方式工作。这一周不学新概念，只把后面 26 周要反复用的东西一次配好。',
         jd: [],
         topics: [
@@ -337,7 +367,8 @@
         videos: []
       },
       {
-        id: 'm1', code: 'M1', name: '模型交互与高级 Prompt', short: '模型交互与 Prompt', w0: 1, w1: 4, hours: 42,
+        id: 'm1', code: 'M1', name: '模型交互与高级 Prompt', short: '模型交互与 Prompt', w0: 1, w1: 3, hours: 24, hoursNote: '（收尾部分）', from: '2026-10-29', to: '2026-11-15', span: '10/29 – 11/13 · 12 个工作日', accept: '11/13',
+        note: '重排说明：流式输出与手写提示词评测骨架已完成；结构化输出、手写 tool-calling 循环、promptfoo ≥20 条、成本表还没做，排在 10/29 – 11/13，逐日任务见 docs/plan/。',
         goal: '不靠任何框架，把 LLM 应用最底层的四件事跑通：对话与流式、结构化输出、工具调用循环、Prompt 的版本化与评测。这一层理解得越透，后面用框架时越知道它在替你做什么。',
         jd: ['Prompt 工程（高级）', 'Agent 开发（基础）'],
         topics: [
@@ -387,7 +418,7 @@
         ]
       },
       {
-        id: 'm2', code: 'M2', name: 'RAG 与向量检索', short: 'RAG 与向量检索', w0: 5, w1: 8, hours: 42,
+        id: 'm2', code: 'M2', name: 'RAG 与向量检索', short: 'RAG 与向量检索', w0: 4, w1: 7, hours: 40, from: '2026-11-16', to: '2026-12-13', span: '11/16 – 12/11 · 20 个工作日', accept: '12/11',
         goal: '搭出一条可评测的生产级 RAG 管线，Milvus 与 Elasticsearch 都上手，并用指标说明每个优化点的收益。JD 里"几乎全部"都要它。',
         jd: ['RAG / 向量检索（必备）', '评测（入门）', '框架（LlamaIndex）'],
         topics: [
@@ -439,7 +470,8 @@
         ]
       },
       {
-        id: 'm3', code: 'M3', name: 'LangGraph 与单 Agent 工程化', short: 'LangGraph 单 Agent', w0: 9, w1: 12, hours: 42,
+        id: 'm3', code: 'M3', name: 'LangGraph 与单 Agent 工程化', short: 'LangGraph 单 Agent', w0: 8, w1: 12, hours: 42, from: '2026-12-14', to: '2027-01-12', span: '12/14 – 01/12 · 21 个工作日', accept: '01/12',
+        note: '12-31 年末盘点；01-01 元旦不排任务。',
         goal: '把 LangGraph 学到源码级，做出一个带持久化、人工审批、长期记忆和完整 trace 的生产形态 Agent。状态机是你的老本行，这个月应该是最顺的一个月。',
         jd: ['Agent 开发（Tool-Use、Memory 管理）', '框架（LangGraph、LangChain）'],
         topics: [
@@ -492,7 +524,8 @@
         ]
       },
       {
-        id: 'm4', code: 'M4', name: '多 Agent 编排 + MCP / Skills 生态', short: '多 Agent + MCP', w0: 13, w1: 17, hours: 50,
+        id: 'm4', code: 'M4', name: '多 Agent 编排 + MCP / Skills 生态', short: '多 Agent + MCP', w0: 12, w1: 17, hours: 50, from: '2027-01-13', to: '2027-02-24', span: '01/13 – 02/24 · 25 个工作日', accept: '02/24',
+        note: '中间含春节假期（02-05 – 02-12，不排任务）；02-04 设春节前里程碑，02-15 节后重启。',
         goal: '做出 JD 原文描述的那种系统：通过 MCP 打通 CRM / ERP / OA，由多 Agent 协作完成跨系统任务。这是 2026 年 JD 相对 2025 年最明显的新增项，所以给了 5 周。',
         jd: ['Agent 开发与多智能体编排（必备）', 'MCP / Skills / Connector 生态（新兴 · 高频）'],
         topics: [
@@ -551,7 +584,8 @@
         ]
       },
       {
-        id: 'm5', code: 'M5', name: '评测体系 + 上下文工程 / Harness / SDD', short: '评测 + 上下文工程', w0: 18, w1: 22, hours: 50,
+        id: 'm5', code: 'M5', name: '评测体系 + 上下文工程 / Harness / SDD', short: '评测 + 上下文工程', w0: 17, w1: 22, hours: 50, from: '2027-02-25', to: '2027-03-31', span: '02/25 – 03/31 · 25 个工作日', accept: '03/31',
+        note: '03-16 写简历 v1，03-31 验收并做第一次模拟面试，为金三银四投递提前。',
         goal: '把前四个项目从"能跑"升级为"可证明"，同时补齐 JD 里两个新兴项。这个月的产出是面试时最能拉开档位的部分。',
         jd: ['评测（新兴 · 中频）', '上下文工程 / Harness 工程 / SDD（新兴 · 中频）', 'Prompt 工程（高级）'],
         topics: [
@@ -611,7 +645,8 @@
         ]
       },
       {
-        id: 'm6', code: 'M6', name: '毕业项目、框架对照与求职', short: '毕业项目与求职', w0: 23, w1: 26, hours: 40,
+        id: 'm6', code: 'M6', name: '毕业项目、框架对照与求职', short: '毕业项目与求职', w0: 22, w1: 26, hours: 42, from: '2027-04-01', to: '2027-04-30', span: '04/01 – 04/30 · 21 个工作日', accept: 'P6 04/20 · 终局 04/30',
+        note: '04-05 清明不排任务；P6 验收 04-20，04-30 终局复盘。',
         goal: '把所有能力收束成一个可展示的端到端系统，补齐框架广度，完成求职材料。这个月的验收对象是简历和面试官。',
         jd: ['全部七项综合验收'],
         topics: [
@@ -720,32 +755,44 @@
     if (!m) return null;
     return new Date(+m[1], +m[2] - 1, +m[3]);
   }
+  function todayDate() { const t = new Date(); t.setHours(0, 0, 0, 0); return t; }
+  // 日程有假期空档、阶段也不一定在周一切换，所以周数和阶段都按 PLAN.weeks / phase.from–to 查表，不再用「开始日期 + 7 天 × N」推算
   function weekInfo() {
-    const start = parseDate(state.startDate);
-    if (!start) return { week: null };
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    const diff = Math.floor((today - start) / 86400000);
-    let week;
-    if (diff < -7) week = -1;
-    else if (diff < 0) week = 0;
-    else week = Math.floor(diff / 7) + 1;
-    return { week, diff, start };
+    const today = todayDate();
+    const first = parseDate(PLAN.weeks[0][1]);
+    if (today < first) {
+      const prep = new Date(first); prep.setDate(prep.getDate() - 7);
+      return { week: today < prep ? -1 : 0, today };
+    }
+    const idx = PLAN.weeks.findIndex(w => today <= parseDate(w[2]));
+    return { week: idx < 0 ? PLAN.weeks.length + 1 : idx + 1, today };
   }
-  function phaseForWeek(w) {
+  function phaseOfWeek(w) {
     if (w == null || w < 0) return null;
-    if (w > 26) return PLAN.phases[PLAN.phases.length - 1];
-    return PLAN.phases.find(p => w >= p.w0 && w <= p.w1) || null;
+    if (w === 0) return PLAN.phases[0];
+    if (w > PLAN.weeks.length) return PLAN.phases[PLAN.phases.length - 1];
+    return PLAN.phases.find(p => p.id === PLAN.weeks[w - 1][3]) || null;
+  }
+  function expectedPhase() {
+    const today = todayDate();
+    if (today < parseDate(PLAN.phases[0].from)) return null;
+    return PLAN.phases.find(p => today <= parseDate(p.to)) || PLAN.phases[PLAN.phases.length - 1];
   }
   function fmtDate(d) {
     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
   }
   function weekRange(w) {
-    const start = parseDate(state.startDate);
-    if (!start || w == null || w < 0) return '';
-    const a = new Date(start); a.setDate(a.getDate() + (w - 1) * 7);
-    const b = new Date(a); b.setDate(b.getDate() + 6);
-    return fmtDate(a).slice(5) + ' – ' + fmtDate(b).slice(5);
+    if (w == null || w < 0) return '';
+    if (w === 0) {
+      const f = parseDate(PLAN.weeks[0][1]);
+      const a = new Date(f); a.setDate(a.getDate() - 7);
+      const b = new Date(f); b.setDate(b.getDate() - 1);
+      return fmtDate(a).slice(5) + ' – ' + fmtDate(b).slice(5);
+    }
+    const wk = PLAN.weeks[w - 1];
+    return wk ? wk[1].slice(5) + ' – ' + wk[2].slice(5) : '';
   }
+  function weekNote(w) { const wk = w >= 1 ? PLAN.weeks[w - 1] : null; return wk ? wk[4] : ''; }
   function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 
   /* =========================== 持久化 =========================== */
@@ -858,15 +905,14 @@
     const pct = all.total ? Math.round(all.done / all.total * 100) : 0;
     const cur = currentPhase();
     const wi = weekInfo();
-    const expected = phaseForWeek(wi.week);
+    const expected = expectedPhase();
     const curIdx = PLAN.phases.indexOf(cur);
     const expIdx = expected ? PLAN.phases.indexOf(expected) : -1;
 
     let weekV, weekD;
-    if (wi.week == null) { weekV = '—'; weekD = '先在页脚设置开始日期'; }
-    else if (wi.week < 0) { weekV = '开始前'; weekD = '第 1 周从 ' + state.startDate + ' 起'; }
+    if (wi.week < 0) { weekV = '开始前'; weekD = '第 1 周从 ' + PLAN.weeks[0][1] + ' 起'; }
     else if (wi.week > 26) { weekV = 'W26+'; weekD = '26 周已过，进入自由复盘'; }
-    else { weekV = 'W' + wi.week; weekD = weekRange(wi.week) + (wi.week === 0 ? ' · 准备周' : ''); }
+    else { weekV = 'W' + wi.week; weekD = weekRange(wi.week) + (wi.week === 0 ? ' · 准备周' : '') + (weekNote(wi.week) ? ' · ' + weekNote(wi.week) : ''); }
 
     let pace = '', paceCls = '';
     if (expIdx >= 0 && wi.week >= 0) {
@@ -906,7 +952,7 @@
 
   function renderGraph() {
     const wi = weekInfo();
-    const expected = phaseForWeek(wi.week);
+    const expected = expectedPhase();
     const sel = selectedPhaseId();
     document.getElementById('nodes').innerHTML = PLAN.phases.map(p => {
       const pr = progress(p); const st = statusOf(p);
@@ -922,22 +968,16 @@
 
     const cells = [];
     for (let w = 0; w <= 26; w++) {
-      const p = phaseForWeek(w);
+      const p = phaseOfWeek(w);
       const idx = p ? PLAN.phases.indexOf(p) : 0;
       const cls = ['cell'];
       if (p && statusOf(p) === 'done') cls.push('phase-done');
       else if (wi.week != null && wi.week >= 0 && w < wi.week) cls.push('past');
       if (wi.week === w) cls.push('now');
-      cells.push(`<span class="${cls.join(' ')}" data-alt="${idx % 2}" title="W${w} · ${p ? esc(p.short) : ''}${weekRange(w) ? ' · ' + weekRange(w) : ''}">${w}</span>`);
+      cells.push(`<span class="${cls.join(' ')}" data-alt="${idx % 2}" title="W${w} · ${p ? esc(p.short) : ''}${weekRange(w) ? ' · ' + weekRange(w) : ''}${weekNote(w) ? ' · ' + esc(weekNote(w)) : ''}">${w}</span>`);
     }
     document.getElementById('strip').innerHTML = cells.join('');
-    const start = parseDate(state.startDate);
-    let right = '';
-    if (start) {
-      const end = new Date(start); end.setDate(end.getDate() + 26 * 7 - 1);
-      right = '第 1 周 ' + fmtDate(start) + ' → 第 26 周止 ' + fmtDate(end);
-    }
-    document.getElementById('weeksRight').textContent = right;
+    document.getElementById('weeksRight').textContent = '第 1 周 ' + PLAN.start + ' → 第 26 周止 ' + PLAN.end;
   }
 
   function selectedPhaseId() {
@@ -990,9 +1030,11 @@
           <div class="meta">
             <span class="pill ${st}">${st === 'done' ? '已完成' : st === 'active' ? '进行中' : '未开始'}</span>
             <span class="pill">${p.w0 === p.w1 ? '第 ' + p.w0 + ' 周' : '第 ' + p.w0 + '–' + p.w1 + ' 周'}</span>
-            <span class="pill">≈ ${p.hours} 小时</span>
+            ${p.span ? `<span class="pill accent">${esc(p.span)}</span>` : ''}
+            <span class="pill">≈ ${p.hours} 小时${esc(p.hoursNote || '')}</span>
           </div>
           <p class="goal">${esc(p.goal)}</p>
+          ${p.note ? `<p class="goal">📌 ${esc(p.note)}</p>` : ''}
           ${jdTags ? `<div class="jd-tags">${jdTags}</div>` : ''}
         </div>
         <aside class="pside">
@@ -1001,7 +1043,7 @@
           <div class="row"><span>验收成果</span><b>${dl.done} / ${dl.total}</b></div>
           <div class="row"><span>学习内容</span><b>${tDone} / ${p.topics.length}</b></div>
           <div class="row"><span>资料 · 视频</span><b>${rDone} / ${p.resources.length} · ${vDone} / ${p.videos.length}</b></div>
-          <div class="row"><span>验收日期</span><input type="date" data-review="${p.id}" value="${esc(review)}"></div>
+          <div class="row"><span>验收日期${p.accept ? `<small style="color:var(--ink-3)"> · 计划 ${esc(p.accept)}</small>` : ''}</span><input type="date" data-review="${p.id}" value="${esc(review)}"></div>
         </aside>
       </div>
       <div class="cols">
@@ -1058,23 +1100,23 @@
   function renderRhythm() {
     document.getElementById('panel').innerHTML = `<div class="doc">
       <h2>节奏与原则</h2>
-      <p class="intro">每周 8–12 小时怎么分，以及三条贯穿始终的原则和七个资深研发容易踩的坑。</p>
+      <p class="intro">工作日每天 2 小时怎么分、周末怎么用、落后了怎么办，以及三条贯穿始终的原则和七个资深研发容易踩的坑。逐日任务和打卡在 docs/plan/，本页看阶段验收。</p>
       <div class="tbl-wrap"><table>
         <thead><tr><th>时段</th><th>时长</th><th>内容</th></tr></thead>
         <tbody>
-          <tr><td class="nowrap">输入</td><td class="nowrap mono">2–3 h</td><td>文档 / 课程 / 论文，带着当周项目的具体问题读，不做无目标的通读。</td></tr>
-          <tr><td class="nowrap">动手</td><td class="nowrap mono">5–7 h</td><td>项目代码，拆成两次 2.5–3.5 小时的深度时段，效果远好于每天 1 小时。</td></tr>
-          <tr><td class="nowrap">评测与复盘</td><td class="nowrap mono">1 h</td><td>跑评测、看 trace、更新学习日志。</td></tr>
-          <tr><td class="nowrap">输出</td><td class="nowrap mono">0.5–1 h</td><td>每周一条学习笔记；每月一篇长文或一次项目 README 完善。</td></tr>
+          <tr><td class="nowrap">周一</td><td class="nowrap mono">2 h</td><td>输入与立项：带着当周项目的具体问题读文档，写 spec、设计或评测用例草案，不做无目标的通读。</td></tr>
+          <tr><td class="nowrap">周二 – 周四</td><td class="nowrap mono">2 h / 天</td><td>动手：项目代码。每天有可验证的完成标准（一次 commit、一段输出或一个数字），拿不出证据就不打勾。</td></tr>
+          <tr><td class="nowrap">周五</td><td class="nowrap mono">2 h</td><td>收尾、跑评测、看 trace；最后 20 分钟写周复盘。</td></tr>
+          <tr><td class="nowrap">周末</td><td class="nowrap mono">不排新任务</td><td>先补欠账（周六、周日各最多 2 h），补完再做该周的拓展思考题；不打卡。</td></tr>
         </tbody>
       </table></div>
-      <h3>学习日志模板（每周一条，放在 docs/journal/）</h3>
-<pre>## Week N（日期）
-- 本周做了什么（3 行以内）
-- 一个数字：本周项目里能量化的一个结果
-- 一个坑：踩了什么、怎么解决
-- 一个问题：还没想明白的事（下周输入阶段优先解决）
-- 面试视角：如果面试官问这周的东西，我会怎么讲</pre>
+      <h3>周复盘模板（每周最后一个工作日填，位置：docs/plan/ 当月文件里该周的末尾）</h3>
+<pre>第 N 周复盘
+- 本周 ★ 全部完成的天数：___ / ___　欠账：___ h
+- 一个数字（本周项目里能量化的一个结果）：
+- 一个坑（踩了什么、怎么解决）：
+- 一个问题（还没想明白的，下周优先解决）：
+- 周末：先补欠账；补完有余力 → 拓展思考：…</pre>
       <h3>三条原则</h3>
       <div class="principles">
         <div class="principle"><b>项目驱动，评测先行</b><p>每个项目在写 Agent 之前先写 10 条测试用例。能不能说出"改了 X 之后指标从 71% 到 84%"，是档位的分水岭。</p></div>
@@ -1091,8 +1133,26 @@
         <li><b>忽视成本与安全。</b>从 P1 起记成本，从 P3 起做工具权限最小化和 prompt injection 防护。</li>
         <li><b>用老经验硬套。</b>状态机思维是优势，但"断言相等"式的测试思维要换成"评分与阈值"。</li>
       </ul>
-      <h3>时间不够时怎么调</h3>
-      <p>某月落后，优先压缩该月的理论输入而不是项目；整体提前，把多出来的时间投到 M5（评测与上下文工程），那是投入产出比最高的部分。</p>
+      <h3>落后了怎么办</h3>
+      <p>欠账 = 未完成的 ★ 分钟数（★ 是每天必做的 120 分钟，☆ 是可选）。每周日晚结算一次。</p>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>欠账</th><th>动作</th></tr></thead>
+        <tbody>
+          <tr><td class="nowrap mono">0 – 3 h</td><td>下周按计划走；欠账写进周复盘，下个周末继续补。</td></tr>
+          <tr><td class="nowrap mono">3 – 6 h</td><td>之后所有 ☆ 全部不做；下个周末必须清到 3 h 以下。</td></tr>
+          <tr><td class="nowrap mono">6 – 10 h</td><td>启用「削减阶梯」，从第 1 级开始，够了就停。</td></tr>
+          <tr><td class="nowrap mono">&gt; 10 h，或连续 3 个工作日零打卡</td><td>停止硬追：整体顺延，不压缩，回来重排日程。</td></tr>
+        </tbody>
+      </table></div>
+      <h3>削减阶梯（每一级都会降低一项验收标准，用了就在验收日写明「已降级」）</h3>
+      <ul class="anti">
+        <li><b>1 级：</b>所有 ☆ 项，对验收没有影响。</li>
+        <li><b>2 级：</b>M2 的 LlamaIndex 实现改为只读文档做对照（约省 3–4 h）。</li>
+        <li><b>3 级：</b>M4 的 Swarm 完整实现改为一个 handoff 小 demo（约省 4–5 h）。</li>
+        <li><b>4 级：</b>M6 的 CrewAI / AutoGPT 实验改为读文档写取舍（约省 2 h）。</li>
+        <li><b>5 级：</b>M5 评测集从 150 条降到 100 条（约省 4 h）。</li>
+      </ul>
+      <p>不能砍：手写 tool loop；Milvus + ES 双实现与混合检索 + Rerank + Ragas；LangGraph 持久化与 interrupt；3 个 MCP Server；Judge 校准；CI 回归；P6 一键部署。这些是简历上的数字来源。整体提前时，把多出来的时间投到 M5（评测与上下文工程），那是投入产出比最高的部分。</p>
     </div>`;
   }
 
@@ -1108,7 +1168,6 @@
     renderGraph();
     renderTabs();
     renderPanel();
-    document.getElementById('startDate').value = state.startDate;
   }
 
   function visiblePhase() {
@@ -1148,7 +1207,6 @@
       if (wrap) wrap.classList.toggle('checked', on);
     });
     document.querySelectorAll('input[data-review]').forEach(i => { i.value = state.reviewed[i.dataset.review] || ''; });
-    const sd = document.getElementById('startDate'); if (sd) sd.value = state.startDate;
     renderStats(); renderGraph(); renderTabs();
     const p = visiblePhase(); if (p) refreshCounters(p);
   }
@@ -1171,8 +1229,6 @@
       const pid = t.dataset.review;
       if (t.value) state.reviewed[pid] = t.value; else delete state.reviewed[pid];
       touch();
-    } else if (t.id === 'startDate') {
-      if (parseDate(t.value)) { state.startDate = t.value; touch(); renderStats(); renderGraph(); }
     }
   });
 
