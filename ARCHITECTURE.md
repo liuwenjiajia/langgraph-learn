@@ -10,8 +10,7 @@
 | `docker/` | 本地检索后端：Milvus Standalone + Elasticsearch，仅限本地开发 | Docker Compose |
 | `evals/` | 评测套件，每个被测对象一个子目录，各自管理依赖 | 视被测对象而定 |
 | `evals/claude-code/` | Claude Code 定制效果 A/B 评测：同一批用例，对比"无定制"与"加载 `~/.claude` 用户级定制" | promptfoo + Claude Agent SDK（Node） |
-| `docs/` | 学习蓝图；`docs/plan/` 逐日打卡计划（2026-10-29 重排，按月一个文件）；`docs/research/` 调研笔记；`docs/specs/` 每次改动的实现方案记录 | Markdown |
-| `scripts/` | 辅助脚本；目前只有 `checkin.py`，只读 `docs/plan/`，统计打卡进度与欠账 | Python 标准库 |
+| `docs/` | 学习蓝图；学习计划网页（阶段清单 + 逐日打卡，2026-10-29 重排）；`docs/research/` 调研笔记；`docs/specs/` 每次改动的实现方案记录 | Markdown、单文件 HTML |
 | `journal/` | 每日学习日志 | Markdown |
 
 ## 依赖方向
