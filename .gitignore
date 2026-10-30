@@ -216,3 +216,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# P2 RAG 语料（由 src/p2-rag/fetch_corpus.py 生成，不入库）
+data/p2/raw/
